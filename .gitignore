@@ -5,3 +5,9 @@ venv/
 .vscode/
 .env
 config.json
+trending_all.json
+trending_changes.jsonl
+trending_shorten.json
+trending.json
+output.log
+error.log
