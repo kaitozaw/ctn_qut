@@ -268,15 +268,9 @@ def run_once(
         return "ERROR"
 
 def main():
-    # --- args ---
-    cfg_path = "configs/bot1.json"
-    if "--config" in sys.argv:
-        i = sys.argv.index("--config")
-        if i + 1 < len(sys.argv):
-            cfg_path = sys.argv[i + 1]
-
     # --- env/config load ---
     load_dotenv()
+    cfg_path = "configs/bot1.json"
     cfg = load_cfg(cfg_path)
     ng_words = load_ng(cfg.get("ng_list_path", "policies/ng_words.txt"))
 

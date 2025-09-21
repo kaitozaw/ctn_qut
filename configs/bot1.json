@@ -2,7 +2,7 @@
     "persona_id": "alex.martin",
     "index": 1,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
+    "feed_key": "trending",
     "keywords": ["election", "policy", "media"],
     "llm": {
         "temperature": 0.7
