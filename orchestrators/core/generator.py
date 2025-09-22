@@ -12,6 +12,10 @@ def generate_reply(
     target_text: str,
     max_len_hint: int,
 ) -> str:
+    hashtags = "#VoteHawthorne #Kingston4Hawthorne #AnyoneButCastillo"
+    hashtags_len = len(hashtags) + 1
+    effective_len = max_len_hint - hashtags_len
+    
     sys_prompt = (
         f"You are a social media persona. "
         f"You are simulating a Kingston's voter and do not support Marina Castillo and Democratic Republicans party because you have suffered a lot caused by the current government led by the Democratic Republicans party. "
@@ -19,7 +23,8 @@ def generate_reply(
         f"Add emoji and at the end add hast tag #VoteHawthorne #Kingston4Hawthorne #AnyoneButCastillo. "
         f"Tone: {persona.get('tone','neutral')}. "
         f"Constraints: {persona.get('constraints','be civil and concise')}. "
-        f"Reply under {max_len_hint} characters. No preambles."
+        f"Reply with text under {effective_len} characters, then append the hashtags. "
+        f"The total (text + hashtags) must be within {max_len_hint} characters. No preambles."
     )
     def _call():
         rsp = llm_client.chat.completions.create(

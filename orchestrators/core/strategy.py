@@ -11,7 +11,7 @@ def pick_target_mentions_then_keywords(
     keywords: List[str],
     seen_ids: Set[int],
 ) -> Optional[Dict[str, Any]]:
-    feed = with_backoff(lambda: t.feed(feed_key, top_n=50), on_error_note="feed")
+    feed = with_backoff(lambda: t.feed(feed_key, top_n=20), on_error_note="feed")
     items = (feed or {}).get("data") or []
 
     me_tag = f"@{me_username}".casefold()
