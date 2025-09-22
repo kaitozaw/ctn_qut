@@ -11,6 +11,6 @@
         "tone": "debater, opinionated",
         "constraints": "argue fairly; avoid personal attacks; persuasive tone"
     },
-    "max_reply_len": 240,
+    "max_reply_len": 200,
     "ng_list_path": "policies/ng_words.txt"
 }

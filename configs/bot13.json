@@ -11,6 +11,6 @@
         "tone": "humorous, witty",
         "constraints": "avoid offensive jokes; keep it lighthearted; stay civil"
     },
-    "max_reply_len": 240,
+    "max_reply_len": 200,
     "ng_list_path": "policies/ng_words.txt"
 }
