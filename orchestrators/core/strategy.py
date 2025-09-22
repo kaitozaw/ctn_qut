@@ -1,3 +1,4 @@
+import random
 import twooter.sdk as twooter
 from typing import Any, Dict, List, Optional, Set
 from .backoff import with_backoff
@@ -10,7 +11,7 @@ def pick_target_mentions_then_keywords(
     keywords: List[str],
     seen_ids: Set[int],
 ) -> Optional[Dict[str, Any]]:
-    feed = with_backoff(lambda: t.feed(feed_key, top_n=20), on_error_note="feed")
+    feed = with_backoff(lambda: t.feed(feed_key, top_n=50), on_error_note="feed")
     items = (feed or {}).get("data") or []
 
     me_tag = f"@{me_username}".casefold()
@@ -39,4 +40,4 @@ def pick_target_mentions_then_keywords(
         if any(k in txt for k in keys):
             return c
 
-    return candidates[0]
+    return random.choice(candidates)
