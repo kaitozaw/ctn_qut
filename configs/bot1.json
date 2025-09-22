@@ -12,7 +12,5 @@
         "constraints": "avoid slurs; be concise; persuasive but civil"
     },
     "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt",
-    "interval_sec": 150,
-    "jitter_sec": 20
+    "ng_list_path": "policies/ng_words.txt"
 }

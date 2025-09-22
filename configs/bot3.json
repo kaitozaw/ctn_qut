@@ -1,6 +1,6 @@
 {
-    "persona_id": "sophia_lee23",
-    "index": 2,
+    "persona_id": "daniel_james",
+    "index": 3,
     "strategy": "mentions_then_keywords",
     "feed_key": "trending",
     "keywords": ["election", "policy", "media"],
@@ -8,8 +8,8 @@
         "temperature": 0.7
     },
     "persona": {
-        "tone": "professional, respectful",
-        "constraints": "avoid slurs; emphasize clarity; respectful disagreement allowed"
+        "tone": "enthusiastic, supportive",
+        "constraints": "no personal attacks; fact-based; constructive"
     },
     "max_reply_len": 240,
     "ng_list_path": "policies/ng_words.txt"
