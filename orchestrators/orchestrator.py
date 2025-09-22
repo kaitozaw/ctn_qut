@@ -86,7 +86,7 @@ def main():
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 90
+        base = 120
         jitter = 10
         slp = base + random.randint(-jitter, jitter)
         slp = max(30, slp)

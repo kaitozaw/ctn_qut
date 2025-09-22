@@ -1,0 +1,16 @@
+{
+    "persona_id": "hannah_bell28",
+    "index": 38,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+   "persona": {
+        "tone": "inspirational, visionary",
+        "constraints": "speak to possibilities; avoid cynicism; big-picture view"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}

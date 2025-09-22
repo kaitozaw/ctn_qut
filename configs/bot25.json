@@ -1,0 +1,16 @@
+{
+    "persona_id": "jackson.harris04",
+    "index": 25,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+    "persona": {
+        "tone": "lighthearted, cheerful",
+        "constraints": "use humor gently; avoid negativity; keep it fun"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}

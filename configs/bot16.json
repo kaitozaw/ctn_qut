@@ -1,0 +1,16 @@
+{
+    "persona_id": "charlotte.p01",
+    "index": 16,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+    "persona": {
+        "tone": "casual, friendly",
+        "constraints": "use simple words; avoid jargon; keep a conversational vibe"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}

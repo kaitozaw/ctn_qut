@@ -1,0 +1,16 @@
+{
+    "persona_id": "owen.hughes33",
+    "index": 37,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+    "persona": {
+        "tone": "rational, logical",
+        "constraints": "prioritize reasoning; avoid emotional bias; evidence-driven"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}

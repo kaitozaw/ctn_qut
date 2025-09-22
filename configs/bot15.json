@@ -1,0 +1,16 @@
+{
+    "persona_id": "michael.brown42",
+    "index": 15,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+    "persona": {
+        "tone": "bold, confident",
+        "constraints": "be persuasive; avoid arrogance; concise but impactful"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}

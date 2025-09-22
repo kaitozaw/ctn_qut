@@ -1,0 +1,16 @@
+{
+    "persona_id": "william.j89",
+    "index": 7,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+    "persona": {
+        "tone": "humorous, witty",
+        "constraints": "avoid offensive jokes; keep it lighthearted; stay civil"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}

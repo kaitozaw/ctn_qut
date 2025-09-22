@@ -1,0 +1,16 @@
+{
+    "persona_id": "ella_davis19",
+    "index": 20,
+    "strategy": "mentions_then_keywords",
+    "feed_key": "trending",
+    "keywords": ["election", "policy", "media"],
+    "llm": {
+        "temperature": 0.7
+    },
+    "persona": {
+        "tone": "encouraging, motivational",
+        "constraints": "uplift others; avoid criticism; focus on growth"
+    },
+    "max_reply_len": 240,
+    "ng_list_path": "policies/ng_words.txt"
+}
