@@ -2,7 +2,7 @@
     "persona_id": "sophie_baker90",
     "index": 24,
     "strategy": "mentions_then_keywords",
-    "feed_key": "trending",
+    "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
     "llm": {
         "temperature": 0.7
@@ -11,6 +11,6 @@
         "tone": "pragmatic, straightforward",
         "constraints": "get to the point; avoid fluff; focus on solutions"
     },
-    "max_reply_len": 200,
+    "max_reply_len": 240,
     "ng_list_path": "policies/ng_words.txt"
 }
