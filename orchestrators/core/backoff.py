@@ -1,5 +1,45 @@
 import random
+import requests
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+
+def _now_utc():
+    return datetime.now(timezone.utc)
+
+def _parse_retry_after(value: str) -> float:
+    if not value:
+        return 0.0
+
+    try:
+        secs = float(value)
+        return max(0.0, secs)
+    except ValueError:
+        pass
+
+    try:
+        dt = parsedate_to_datetime(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        delta = (dt - _now_utc()).total_seconds()
+        return max(0.0, delta)
+    except Exception:
+        return 0.0
+
+def _log_rate_headers(resp, note: str = ""):
+    try:
+        h = resp.headers or {}
+        ra  = h.get("Retry-After")
+        rem = h.get("X-RateLimit-Remaining")
+        rst = h.get("X-RateLimit-Reset")
+        lim = h.get("X-RateLimit-Limit")
+        print(
+            f"[ratelimit]{(' ' + note) if note else ''} "
+            f"status={resp.status_code} "
+            f"limit={lim} remaining={rem} reset={rst} retry_after={ra}"
+        )
+    except Exception:
+        pass
 
 def should_retry(exc: Exception) -> bool:
     status = getattr(exc, "status_code", None) or getattr(getattr(exc, "response", None), "status_code", None)
@@ -11,20 +51,57 @@ def should_retry(exc: Exception) -> bool:
         return False
     return True
 
-def with_backoff(fn, *, tries: int = 5, base: float = 0.25, factor: float = 2.0, jitter: float = 0.2, on_error_note: str = ""):
-    last = None
+def with_backoff(fn, *, tries: int = 8, base: float = 1.0, factor: float = 2.0, max_sleep: float = 60.0, max_total: float = 120.0, on_error_note: str = ""):
+    start = time.monotonic()
     delay = base
+    last = None
+
     for attempt in range(1, tries + 1):
         try:
             return fn()
-        except Exception as e:
-            last = e
+        except requests.HTTPError as e:
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                _log_rate_headers(resp, note=on_error_note or "http_error")
             if not should_retry(e) or attempt == tries:
-                raise
-            j = delay * (1 + random.uniform(-jitter, jitter))
+                last = e
+                break
+
+            status = getattr(resp, "status_code", None)
+            sleep_secs = 0.0
+
+            if status == 429:
+                retry_after = resp.headers.get("Retry-After") if resp is not None else None
+                ra_secs = _parse_retry_after(retry_after) if retry_after else 0.0
+                if ra_secs > 0:
+                    sleep_secs = min(ra_secs, max_sleep)
+                else:
+                    sleep_secs = random.uniform(0, min(delay, max_sleep))
+            else:
+                sleep_secs = random.uniform(0, min(delay, max_sleep))
+
             note = f"[retry {attempt}/{tries}] {on_error_note} {e.__class__.__name__}: {e}"
-            print(note)
-            time.sleep(max(0.05, j))
-            delay *= factor
+            print(f"{note} sleep={sleep_secs:.2f}s")
+            time.sleep(max(0.05, sleep_secs))
+
+            delay = min(delay * factor, max_sleep)
+
+            if (time.monotonic() - start) >= max_total:
+                last = e
+                break
+
+        except Exception as e:
+            if not should_retry(e) or attempt == tries:
+                last = e
+                break
+            sleep_secs = random.uniform(0, min(delay, max_sleep))
+            note = f"[retry {attempt}/{tries}] {on_error_note} {e.__class__.__name__}: {e}"
+            print(f"{note} sleep={sleep_secs:.2f}s")
+            time.sleep(max(0.05, sleep_secs))
+            delay = min(delay * factor, max_sleep)
+            if (time.monotonic() - start) >= max_total:
+                last = e
+                break
+
     if last:
         raise last

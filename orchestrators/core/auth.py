@@ -1,6 +1,10 @@
 import os
+import requests
 import twooter.sdk as twooter
 from .backoff import with_backoff
+
+class SkipPersona(Exception):
+    pass
 
 def ensure_session(persona_id: str, index: int) -> twooter.Twooter:
     t = twooter.new(use_env=True)
@@ -14,11 +18,18 @@ def ensure_session(persona_id: str, index: int) -> twooter.Twooter:
         pwd = os.getenv(env_key)
         if not pwd:
             raise RuntimeError(f"Missing {env_key} for first login of {persona_id}")
+        
+        try:
+            with_backoff(
+                lambda: t.login(persona_id, pwd),
+                on_error_note=f"login {persona_id}",
+            )
+        except requests.HTTPError as e:
+            resp = getattr(e, "response", None)
+            if resp is not None and getattr(resp, "status_code", None) == 429:
+                raise SkipPersona(f"rate limited: {persona_id}")
+            raise
 
-        with_backoff(
-            lambda: t.login(persona_id, pwd),
-            on_error_note=f"login {persona_id}",
-        )
     return t
 
 def whoami_username(t: twooter.Twooter) -> str:

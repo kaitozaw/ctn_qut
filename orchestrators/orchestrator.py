@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from itertools import cycle
 from pathlib import Path
 from typing import Any, Dict, List, Set
-from orchestrators.core import build_llm_client, ensure_session, load_cfg, load_ng, run_once, whoami_username
+from orchestrators.core import build_llm_client, ensure_session, load_cfg, load_ng, run_once, SkipPersona, whoami_username
 
 def main():
     # --- env load ---
@@ -53,7 +53,11 @@ def main():
         # session
         t = session_by_persona.get(persona_id)
         if t is None:
-            t = ensure_session(persona_id, index)
+            try:
+                t = ensure_session(persona_id, index)
+            except SkipPersona as e:
+                print(f"[skip] {e}")
+                continue 
             session_by_persona[persona_id] = t
 
         # whoami
