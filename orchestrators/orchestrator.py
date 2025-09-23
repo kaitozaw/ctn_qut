@@ -31,7 +31,7 @@ def main():
     # --- env-based filtering (role/index)
     cfgs = filter_cfgs_by_env(cfgs)
     
-    # --- sessions, whoami, seen post IDs (per bot) ---
+    # --- session, whoami, seen IDs (per bot) ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
     username_by_persona: Dict[str, str] = {}
     seen_by_persona: Dict[str, Set[int]] = {}
@@ -51,7 +51,7 @@ def main():
     while True:
         cfg = next(rr)
 
-        # --- resolve/cached per-bot state ---
+        # --- id and index ---
         persona_id = cfg["persona_id"]
         index = cfg["index"]
 
@@ -74,7 +74,7 @@ def main():
             username_by_persona[persona_id] = me_username
             print(f"[whoami] persona={persona_id} username={me_username}")
 
-        # --- seen IDs per persona ---
+        # --- seen IDs ---
         seen_ids = seen_by_persona.get(persona_id)
         if seen_ids is None:
             seen_ids = set()
