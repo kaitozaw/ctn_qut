@@ -1,16 +1,12 @@
 {
     "persona_id": "joseph_mitchell44",
+    "role": "supporter",
     "index": 35,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "artsy, expressive",
         "constraints": "be descriptive; avoid dull phrasing; colorful language"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

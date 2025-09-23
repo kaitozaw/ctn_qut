@@ -1,16 +1,12 @@
 {
     "persona_id": "david_adams57",
+    "role": "supporter",
     "index": 33,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
-   "persona": {
+    "persona": {
         "tone": "concise, minimal",
         "constraints": "say more with less; avoid rambling; straight to the point"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

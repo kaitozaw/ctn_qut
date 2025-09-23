@@ -1,16 +1,12 @@
 {
     "persona_id": "noah_morris65",
+    "role": "supporter",
     "index": 39,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "adventurous, daring",
         "constraints": "encourage risk-taking; avoid fearmongering; stay exciting"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

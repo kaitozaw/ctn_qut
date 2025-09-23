@@ -11,7 +11,10 @@ def pick_target_mentions_then_keywords(
     keywords: List[str],
     seen_ids: Set[int],
 ) -> Optional[Dict[str, Any]]:
-    feed = with_backoff(lambda: t.feed(feed_key, top_n=20), on_error_note="feed")
+    feed = with_backoff(
+        lambda: t.feed(feed_key, top_n=20),
+        on_error_note="feed"
+    )
     items = (feed or {}).get("data") or []
 
     me_tag = f"@{me_username}".casefold()
@@ -27,6 +30,22 @@ def pick_target_mentions_then_keywords(
         if author and author == me_username:
             continue
         candidates.append({"id": pid, "content": content, "author": author})
+
+    if not candidates:
+        latest = with_backoff(
+            lambda: t.feed("latest", top_n=20),
+            on_error_note="feed"
+        )
+        latest_items = (latest or {}).get("data") or []
+        for d in latest_items:
+            pid, content, author = extract_post_fields(d)
+            if not pid or not content:
+                continue
+            if pid in seen_ids:
+                continue
+            if author and author == me_username:
+                continue
+            candidates.append({"id": pid, "content": content, "author": author})
 
     if not candidates:
         return None 

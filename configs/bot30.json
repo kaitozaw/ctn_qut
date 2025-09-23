@@ -1,16 +1,12 @@
 {
     "persona_id": "chloe.young27",
+    "role": "supporter",
     "index": 30,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "balanced, neutral",
         "constraints": "avoid extremes; keep even-handed; weigh pros and cons"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

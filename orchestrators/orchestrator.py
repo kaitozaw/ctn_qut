@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from itertools import cycle
 from pathlib import Path
 from typing import Any, Dict, List, Set
-from orchestrators.core import build_llm_client, ensure_session, load_cfg, load_ng, run_once, SkipPersona, whoami_username
+from orchestrators.core import build_llm_client, ensure_session, filter_cfgs_by_env, load_cfg, load_ng, run_once, SkipPersona, whoami_username
 
 def main():
     # --- env load ---
@@ -18,7 +18,7 @@ def main():
     if not cfg_paths:
         raise RuntimeError("No bot config files found under configs/ (expected e.g., bot1.json, bot2.json)")
     
-    # materialize config dicts in stable order
+    # --- materialize config dicts in stable order ---
     cfgs: List[Dict[str, Any]] = []
     for p in cfg_paths:
         try:
@@ -28,11 +28,12 @@ def main():
     if not cfgs:
         raise RuntimeError("No valid bot configs could be loaded.")
     
-    # --- caches (per-bot) ---
-    # sessions, whoami, ng lists, seen post IDs
+    # --- env-based filtering (role/index)
+    cfgs = filter_cfgs_by_env(cfgs)
+    
+    # --- sessions, whoami, seen post IDs (per bot) ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
     username_by_persona: Dict[str, str] = {}
-    ng_by_path: Dict[str, List[str]] = {}
     seen_by_persona: Dict[str, Set[int]] = {}
 
     # --- LLM client (shared) ---
@@ -40,7 +41,11 @@ def main():
     TEAM_KEY = os.getenv("TEAM_KEY")
     llm_client = build_llm_client(BASE_URL, TEAM_KEY)
 
-    # round-robin iterator across cfgs
+    # --- NG list (shared) ---
+    ng_path = "policies/ng_words.txt"
+    ng_words = load_ng(ng_path)
+
+    # --- round-robin iterator across cfgs ---
     rr = cycle(cfgs)
 
     while True:
@@ -50,7 +55,7 @@ def main():
         persona_id = cfg["persona_id"]
         index = cfg["index"]
 
-        # session
+        # --- session ---
         t = session_by_persona.get(persona_id)
         if t is None:
             try:
@@ -60,7 +65,7 @@ def main():
                 continue 
             session_by_persona[persona_id] = t
 
-        # whoami
+        #  --- whoami ---
         me_username = username_by_persona.get(persona_id)
         if not me_username:
             me_username = whoami_username(t)
@@ -69,14 +74,7 @@ def main():
             username_by_persona[persona_id] = me_username
             print(f"[whoami] persona={persona_id} username={me_username}")
 
-        # NG list
-        ng_path = cfg.get("ng_list_path", "policies/ng_words.txt")
-        ng_words = ng_by_path.get(ng_path)
-        if ng_words is None:
-            ng_words = load_ng(ng_path)
-            ng_by_path[ng_path] = ng_words
-
-        # seen IDs per persona
+        # --- seen IDs per persona ---
         seen_ids = seen_by_persona.get(persona_id)
         if seen_ids is None:
             seen_ids = set()
@@ -84,16 +82,15 @@ def main():
 
         # --- one action for this persona ---
         try:
-            status = run_once(t, me_username, cfg, llm_client, ng_words, seen_ids)
+            status = run_once(t, me_username, cfg, seen_ids, llm_client, ng_words)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 120
+        base = 60
         jitter = 10
         slp = base + random.randint(-jitter, jitter)
-        slp = max(30, slp)
         print(f"[loop] persona={persona_id} status={status} sleep={slp}s")
         time.sleep(slp)
     

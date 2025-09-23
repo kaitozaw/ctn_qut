@@ -1,16 +1,12 @@
 {
     "persona_id": "emily.r98",
+    "role": "supporter",
     "index": 4,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "witty, playful",
         "constraints": "avoid slurs; concise; empathetic and respectful"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

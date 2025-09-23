@@ -1,16 +1,12 @@
 {
     "persona_id": "sophia_turner20",
+    "role": "supporter",
     "index": 40,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "formal, polite",
         "constraints": "be respectful; avoid slang; maintain professionalism"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

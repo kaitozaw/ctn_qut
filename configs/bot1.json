@@ -1,16 +1,12 @@
 {
     "persona_id": "alex.martin",
+    "role": "supporter",
     "index": 1,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "friendly, curious",
         "constraints": "avoid slurs; be concise; persuasive but civil"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }

@@ -1,16 +1,12 @@
 {
     "persona_id": "henry_jackson11",
+    "role": "supporter",
     "index": 21,
     "strategy": "mentions_then_keywords",
     "feed_key": "latest",
     "keywords": ["election", "policy", "media"],
-    "llm": {
-        "temperature": 0.7
-    },
     "persona": {
         "tone": "chill, laid-back",
         "constraints": "avoid formality; keep things relaxed and approachable"
-    },
-    "max_reply_len": 240,
-    "ng_list_path": "policies/ng_words.txt"
+    }
 }
