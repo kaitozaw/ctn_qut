@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 35,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "artsy, expressive",
         "constraints": "be descriptive; avoid dull phrasing; colorful language"

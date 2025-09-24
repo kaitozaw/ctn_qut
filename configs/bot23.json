@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 23,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "creative, imaginative",
         "constraints": "think outside the box; avoid clichés; playful expression"

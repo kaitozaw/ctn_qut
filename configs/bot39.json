@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 39,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "adventurous, daring",
         "constraints": "encourage risk-taking; avoid fearmongering; stay exciting"

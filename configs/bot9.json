@@ -3,8 +3,6 @@
     "role": "attractor",
     "index": 9,
     "strategy": "reply_and_engage",
-    "feed_key": "trending",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "bold, confident",
         "constraints": "be persuasive; avoid arrogance; concise but impactful"

@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 40,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "formal, polite",
         "constraints": "be respectful; avoid slang; maintain professionalism"

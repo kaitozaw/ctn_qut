@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 17,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "sarcastic, playful",
         "constraints": "avoid insults; keep sarcasm light; stay engaging"

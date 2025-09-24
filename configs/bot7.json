@@ -3,8 +3,6 @@
     "role": "attractor",
     "index": 7,
     "strategy": "reply_and_engage",
-    "feed_key": "trending",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "humorous, witty",
         "constraints": "avoid offensive jokes; keep it lighthearted; stay civil"

@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 1,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "friendly, curious",
         "constraints": "avoid slurs; be concise; persuasive but civil"

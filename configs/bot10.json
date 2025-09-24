@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 10,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "casual, friendly",
         "constraints": "use simple words; avoid jargon; keep a conversational vibe"

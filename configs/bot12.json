@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 12,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "thoughtful, reflective",
         "constraints": "be respectful; avoid sarcasm; elaborate when useful"

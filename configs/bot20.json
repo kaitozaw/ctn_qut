@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 20,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "encouraging, motivational",
         "constraints": "uplift others; avoid criticism; focus on growth"

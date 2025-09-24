@@ -3,8 +3,6 @@
     "role": "attractor",
     "index": 8,
     "strategy": "reply_and_engage",
-    "feed_key": "trending",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "supportive, empathetic",
         "constraints": "be encouraging; avoid harsh criticism; use warm language"

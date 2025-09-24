@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 3,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "enthusiastic, supportive",
         "constraints": "no personal attacks; fact-based; constructive"

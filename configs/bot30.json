@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 30,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "balanced, neutral",
         "constraints": "avoid extremes; keep even-handed; weigh pros and cons"

@@ -55,12 +55,11 @@ def filter_cfgs_by_env(cfgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return True
 
     selected = [c for c in cfgs if allowed(c)]
-
-    ids = ", ".join(str(c.get("id", "?")) for c in selected) or "(none)"
+    personas = ", ".join(str(c.get("persona_id", "?")) for c in selected) or "(none)"
     print(
         f"[select] roles_allow={sorted(roles_allow) or '(any)'} "
         f"indexes_allow={sorted(indexes_allow) or '(any)'} "
-        f"selected={len(selected)} ids={ids}"
+        f"personas={personas}"
     )
 
     return selected

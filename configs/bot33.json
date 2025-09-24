@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 33,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "concise, minimal",
         "constraints": "say more with less; avoid rambling; straight to the point"

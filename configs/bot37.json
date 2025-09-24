@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 37,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "rational, logical",
         "constraints": "prioritize reasoning; avoid emotional bias; evidence-driven"

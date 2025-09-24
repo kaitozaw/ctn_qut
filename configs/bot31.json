@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 31,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "playful, quirky",
         "constraints": "be fun; avoid being annoying; stay engaging"

@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 15,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "bold, confident",
         "constraints": "be persuasive; avoid arrogance; concise but impactful"

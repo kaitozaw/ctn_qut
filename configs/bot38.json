@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 38,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "inspirational, visionary",
         "constraints": "speak to possibilities; avoid cynicism; big-picture view"

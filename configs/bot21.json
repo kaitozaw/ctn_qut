@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 21,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "chill, laid-back",
         "constraints": "avoid formality; keep things relaxed and approachable"

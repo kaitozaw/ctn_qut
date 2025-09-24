@@ -1,80 +1,72 @@
+import json
+import os
 from openai import OpenAI
+from typing import Any, Dict, List
 from typing import Any, Dict
 from .backoff import with_backoff
 
-def build_llm_client(base_url, api_key) -> OpenAI:    
-    return OpenAI(base_url=base_url, api_key=api_key)
+def build_llm_client() -> OpenAI:    
+    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_reply(
+def generate_replies(
     llm_client: OpenAI,
-    target_text: str,
-    persona: Dict[str, Any],
-    context: Dict[str, Any],
+    target_posts: List[Dict[str, Any]],
     max_len_hint: int,
     temperature: int,
-) -> str:
-    stance = context["stance"]
-    talking_points = context["talking_points"]
+) -> List[Dict[str, Any]]:
+    sys_prompt = f"""You are a Kingston social persona.
+        GOAL:
+        - Gain followers and positive engagement for Victor Hawthorne.
 
-    stance_and_redlines = (
-        f"- Supports: {', '.join(stance['supports'])}\n"
-        f"- Opposes: {', '.join(stance['opposes'])}"
-    )
+        TASK:
+        - For each input post, write ONE short, empathetic reply (<= {max_len_hint} chars).
+        - Mirror one concrete detail/feeling, then pivot to exactly ONE point.
 
-    policy_and_talking_points = (
-        f"- Hawthorne: {', '.join(talking_points['hawthorne'])}\n"
-        f"- Castillo: {', '.join(talking_points['castillo'])}"
-    )
+        STYLE:
+        - Replies must be punchy, memorable, and eye-catching.
+        - Use vivid language or rhythm so they stand out in a fast social feed.
+        - Keep them natural and credible, not overblown.
 
-    sys_prompt = f"""
-        You are a social media persona operating on Kingston's “Legit Social”.
-
-        [MISSION]
-        - Help Victor Hawthorne win the 2025 Kingston presidential election by earning follows and positive engagement from regular users and NPC-like bots.
-        - Your job is to craft SHORT, empathetic reply messages to trending posts.
-
-        [OBJECTIVE]
-        - Make the original poster feel heard, then steer toward ONE Hawthorne-aligned policy point OR ONE reasonable concern about Castillo.
-        - Optimize for credibility and follow-likelihood, not dunking or point-scoring.
-
-        [Approach]
-        - Start with a micro-mirror of something concrete in the user's post (feeling, detail, situation).
-        - Pivot to exactly ONE policy/talking point from the sections below.
-
-        [TONE & CONSTRAINTS]
-        - TONE: {persona['tone']}
-        - Constraints: {persona['constraints']}
-
-        [STANCE & REDLINES]
-        {stance_and_redlines}
-
-        [POLICY & TALKING POINTS]
-        {policy_and_talking_points}
-
-        [FORMAT]
-        - The total text must be within {max_len_hint} characters. No preambles.
-        - Do NOT include hashtags, links, or media in the body.
-        - Output ONLY the reply text: no quotes, no prefixes, no markdown.
-    """
+        OUTPUT:
+        - Return a JSON object with key "replies".
+        - "replies" must be an array of objects, each: {{"id": <id>, "reply": <text>}}
+        - Example:
+            {{
+            "replies": [
+                {{"id": 123, "reply": "I get your concern about housing—Victor's plan makes rent fairer."}},
+                {{"id": 456, "reply": "Good point on jobs, and Victor adds training so Kingston's workers thrive."}}
+            ]
+            }}
+        - Only output this JSON object. No prose, no markdown, no backticks.
+    """.strip()
 
     def _call():
-        rsp = llm_client.chat.completions.create(
-            model = "gemma3:4b",
-            temperature = temperature,
+        return llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=temperature,
+            response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": sys_prompt},
-                {"role": "user",   "content": target_text},
+                {"role": "user", "content": json.dumps({"target_posts": target_posts}, ensure_ascii=False)},
             ],
         )
-        return rsp
+
     rsp = with_backoff(
         _call,
         on_error_note="llm"
     )
-    text = (rsp.choices[0].message.content or "").strip()
+    raw = (rsp.choices[0].message.content or "").strip()
 
-    hashtag = " #Kingston4Hawthorne"
-    if len(text) + len(hashtag) <= max_len_hint:
-        text = text + hashtag
+    try:
+        data = json.loads(raw)
+        replies = data["replies"]
+    except Exception as e:
+        snippet = raw[:300].replace("\n", " ")
+        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
-    return text
+    hashtag = " #Kingston4Hawthorne #VoteHawthorne"
+    for r in replies:
+        reply_text = (r.get("reply") or "").strip()
+        if len(reply_text) + len(hashtag) <= 240:
+            r["reply"] = reply_text + hashtag
+    return replies

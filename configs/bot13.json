@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 13,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "humorous, witty",
         "constraints": "avoid offensive jokes; keep it lighthearted; stay civil"

@@ -3,8 +3,6 @@
     "role": "supporter",
     "index": 14,
     "strategy": "mentions_then_keywords",
-    "feed_key": "latest",
-    "keywords": ["election", "policy", "media"],
     "persona": {
         "tone": "supportive, empathetic",
         "constraints": "be encouraging; avoid harsh criticism; use warm language"

@@ -1,12 +1,11 @@
-import os
 import random
 import time
 import twooter.sdk as twooter
 from dotenv import load_dotenv
 from itertools import cycle
-from pathlib import Path
-from typing import Any, Dict, List, Set
 from orchestrators.core import build_llm_client, ensure_session, filter_cfgs_by_env, load_cfg, load_ng, run_once, SkipPersona, whoami_username
+from pathlib import Path
+from typing import Any, Dict, List
 
 def main():
     # --- env load ---
@@ -31,15 +30,13 @@ def main():
     # --- env-based filtering (role/index)
     cfgs = filter_cfgs_by_env(cfgs)
     
-    # --- session, whoami, seen IDs (per bot) ---
+    # --- session, whoami, actions (per bot) ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
     username_by_persona: Dict[str, str] = {}
-    seen_by_persona: Dict[str, Set[int]] = {}
+    actions_by_persona: Dict[str, List[Dict[str, Any]]] = {}
 
     # --- LLM client (shared) ---
-    BASE_URL = "http://llm-proxy.legitreal.com/openai"
-    TEAM_KEY = os.getenv("TEAM_KEY")
-    llm_client = build_llm_client(BASE_URL, TEAM_KEY)
+    llm_client = build_llm_client()
 
     # --- NG list (shared) ---
     ng_path = "policies/ng_words.txt"
@@ -74,25 +71,25 @@ def main():
             username_by_persona[persona_id] = me_username
             print(f"[whoami] persona={persona_id} username={me_username}")
 
-        # --- seen IDs ---
-        seen_ids = seen_by_persona.get(persona_id)
-        if seen_ids is None:
-            seen_ids = set()
-            seen_by_persona[persona_id] = seen_ids
+        # --- actions ---
+        actions = actions_by_persona.get(persona_id)
+        if actions is None:
+            actions = []
+            actions_by_persona[persona_id] = actions
 
-        # --- one action for this persona ---
+        # --- run once for this persona ---
         try:
-            status = run_once(t, me_username, cfg, seen_ids, llm_client, ng_words)
+            status = run_once(cfg, t, me_username, actions, llm_client, ng_words)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 60
-        jitter = 10
+        base = 20
+        jitter = 5
         slp = base + random.randint(-jitter, jitter)
         print(f"[loop] persona={persona_id} status={status} sleep={slp}s")
         time.sleep(slp)
-    
+
 if __name__ == "__main__":
     main()
