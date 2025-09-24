@@ -85,8 +85,8 @@ def main():
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 20
-        jitter = 5
+        base = 5
+        jitter = 1
         slp = base + random.randint(-jitter, jitter)
         print(f"[loop] persona={persona_id} status={status} sleep={slp}s")
         time.sleep(slp)
