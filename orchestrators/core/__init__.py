@@ -1,4 +1,4 @@
-from .auth import ensure_session, SkipPersona, whoami_username
+from .auth import ensure_session, relogin_for, SkipPersona, whoami_username
 from .backoff import with_backoff
 from .bootstrap import filter_cfgs_by_env, load_cfg, load_ng
 from .feed import extract_post_fields
@@ -9,7 +9,7 @@ from .safety import safety_check
 from .strategy import reply_and_engage
 
 __all__ = [
-    "ensure_session", "SkipPersona", "whoami_username",
+    "ensure_session", "relogin_for", "SkipPersona", "whoami_username",
     "with_backoff",
     "filter_cfgs_by_env", "load_cfg", "load_ng",
     "extract_post_fields",

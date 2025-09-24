@@ -49,8 +49,8 @@ def main():
         cfg = next(rr)
 
         # --- id and index ---
-        persona_id = cfg["persona_id"]
-        index = cfg["index"]
+        persona_id = (cfg.get("persona_id") or "").strip()
+        index = cfg.get("index", -1)
 
         # --- session ---
         t = session_by_persona.get(persona_id)
@@ -64,7 +64,7 @@ def main():
 
         #  --- whoami ---
         me_username = username_by_persona.get(persona_id)
-        if not me_username:
+        if me_username is None:
             me_username = whoami_username(t)
             if not me_username:
                 raise RuntimeError(f"Failed to resolve whoami username for {persona_id}")
@@ -85,8 +85,8 @@ def main():
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 20
-        jitter = 5
+        base = 5
+        jitter = 1
         slp = base + random.randint(-jitter, jitter)
         print(f"[loop] persona={persona_id} status={status} sleep={slp}s")
         time.sleep(slp)

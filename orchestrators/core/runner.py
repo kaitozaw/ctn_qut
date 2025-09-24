@@ -14,7 +14,7 @@ def run_once(
     strategy = (cfg.get("strategy") or "").strip()
 
     if strategy == "reply_and_engage":
-        result = reply_and_engage(t, me_username, actions, llm_client, ng_words)
+        result = reply_and_engage(cfg, t, me_username, actions, llm_client, ng_words)
         return result
     else:
         return "NO_STRATEGY"

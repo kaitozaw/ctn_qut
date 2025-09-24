@@ -32,6 +32,17 @@ def ensure_session(persona_id: str, index: int) -> twooter.Twooter:
 
     return t
 
+def relogin_for(t: twooter.Twooter, persona_id: str, index: int):
+    env_key = f"PASSWORD_BOT{index}"
+    pwd = os.getenv(env_key)
+    if not pwd:
+        raise RuntimeError(f"Missing {env_key} for re-login of {persona_id}")
+
+    def _relogin():
+        t.login(persona_id, pwd)
+
+    return _relogin
+
 def whoami_username(t: twooter.Twooter) -> str:
     me = with_backoff(
         lambda: t.whoami(),

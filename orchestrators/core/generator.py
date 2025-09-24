@@ -60,6 +60,16 @@ def generate_replies(
     try:
         data = json.loads(raw)
         replies = data["replies"]
+        
+        if not isinstance(replies, list):
+            raise ValueError("'replies' is not a list")
+        for i, r in enumerate(replies):
+            if not isinstance(r, dict):
+                raise ValueError(f"replies[{i}] is not an object")
+            if "id" not in r:
+                raise ValueError(f"replies[{i}] missing 'id'")
+            if "reply" not in r:
+                raise ValueError(f"replies[{i}] missing 'reply'")
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
@@ -67,6 +77,6 @@ def generate_replies(
     hashtag = " #Kingston4Hawthorne #VoteHawthorne"
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
-        if len(reply_text) + len(hashtag) <= 240:
+        if len(reply_text) + len(hashtag) <= 255:
             r["reply"] = reply_text + hashtag
     return replies

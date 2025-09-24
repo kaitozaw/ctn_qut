@@ -3,6 +3,35 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
+def filter_cfgs_by_env(cfgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    roles_allow, indexes_allow = _parse_env_allows()
+
+    def allowed(c: Dict[str, Any]) -> bool:
+        if roles_allow:
+            role = str(c.get("role", "")).casefold()
+            if role not in roles_allow:
+                return False
+
+        if indexes_allow:
+            try:
+                idx = int(c.get("index"))
+            except (TypeError, ValueError):
+                return False
+            if idx not in indexes_allow:
+                return False
+
+        return True
+
+    selected = [c for c in cfgs if allowed(c)]
+    personas = ", ".join(str(c.get("persona_id", "?")) for c in selected) or "(none)"
+    print(
+        f"[select] roles_allow={sorted(roles_allow) or '(any)'} "
+        f"indexes_allow={sorted(indexes_allow) or '(any)'} "
+        f"personas={personas}"
+    )
+
+    return selected
+
 def load_cfg(cfg_path: str) -> Dict[str, Any]:
     p = Path(cfg_path)
     if not p.exists():
@@ -34,32 +63,3 @@ def _parse_env_allows():
         except ValueError:
             pass
     return roles_allow, set(idx_allow)
-
-def filter_cfgs_by_env(cfgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    roles_allow, indexes_allow = _parse_env_allows()
-
-    def allowed(c: Dict[str, Any]) -> bool:
-        if roles_allow:
-            role = str(c.get("role", "")).casefold()
-            if role not in roles_allow:
-                return False
-
-        if indexes_allow:
-            try:
-                idx = int(c.get("index"))
-            except (TypeError, ValueError):
-                return False
-            if idx not in indexes_allow:
-                return False
-
-        return True
-
-    selected = [c for c in cfgs if allowed(c)]
-    personas = ", ".join(str(c.get("persona_id", "?")) for c in selected) or "(none)"
-    print(
-        f"[select] roles_allow={sorted(roles_allow) or '(any)'} "
-        f"indexes_allow={sorted(indexes_allow) or '(any)'} "
-        f"personas={personas}"
-    )
-
-    return selected
