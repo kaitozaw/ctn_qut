@@ -2,7 +2,7 @@
     "persona_id": "owen.hughes33",
     "role": "supporter",
     "index": 37,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "rational, logical",
         "constraints": "prioritize reasoning; avoid emotional bias; evidence-driven"

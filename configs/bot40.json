@@ -2,7 +2,7 @@
     "persona_id": "sophia_turner20",
     "role": "supporter",
     "index": 40,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "formal, polite",
         "constraints": "be respectful; avoid slang; maintain professionalism"

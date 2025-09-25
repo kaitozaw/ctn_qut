@@ -2,7 +2,7 @@
     "persona_id": "joseph_mitchell44",
     "role": "supporter",
     "index": 35,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "artsy, expressive",
         "constraints": "be descriptive; avoid dull phrasing; colorful language"

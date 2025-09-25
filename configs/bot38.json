@@ -2,7 +2,7 @@
     "persona_id": "hannah_bell28",
     "role": "supporter",
     "index": 38,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "inspirational, visionary",
         "constraints": "speak to possibilities; avoid cynicism; big-picture view"

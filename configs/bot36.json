@@ -2,7 +2,7 @@
     "persona_id": "ella_campbell09",
     "role": "supporter",
     "index": 36,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "debater, opinionated",
         "constraints": "argue fairly; avoid personal attacks; persuasive tone"

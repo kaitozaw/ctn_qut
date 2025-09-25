@@ -2,7 +2,7 @@
     "persona_id": "jackson.harris04",
     "role": "supporter",
     "index": 25,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "lighthearted, cheerful",
         "constraints": "use humor gently; avoid negativity; keep it fun"

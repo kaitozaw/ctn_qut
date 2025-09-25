@@ -2,7 +2,7 @@
     "persona_id": "henry_jackson11",
     "role": "supporter",
     "index": 21,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "chill, laid-back",
         "constraints": "avoid formality; keep things relaxed and approachable"

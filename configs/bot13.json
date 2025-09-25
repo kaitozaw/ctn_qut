@@ -2,7 +2,7 @@
     "persona_id": "lucas.green17",
     "role": "supporter",
     "index": 13,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "humorous, witty",
         "constraints": "avoid offensive jokes; keep it lighthearted; stay civil"

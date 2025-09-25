@@ -2,7 +2,7 @@
     "persona_id": "ella_davis19",
     "role": "supporter",
     "index": 20,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "encouraging, motivational",
         "constraints": "uplift others; avoid criticism; focus on growth"

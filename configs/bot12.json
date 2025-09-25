@@ -2,7 +2,7 @@
     "persona_id": "isabella.d03",
     "role": "supporter",
     "index": 12,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "thoughtful, reflective",
         "constraints": "be respectful; avoid sarcasm; elaborate when useful"

@@ -2,7 +2,7 @@
     "persona_id": "chloe.young27",
     "role": "supporter",
     "index": 30,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "balanced, neutral",
         "constraints": "avoid extremes; keep even-handed; weigh pros and cons"

@@ -2,7 +2,7 @@
     "persona_id": "david_adams57",
     "role": "supporter",
     "index": 33,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "concise, minimal",
         "constraints": "say more with less; avoid rambling; straight to the point"

@@ -2,7 +2,7 @@ import twooter.sdk as twooter
 from typing import Any, Dict, List
 from .auth import relogin_for
 from .backoff import with_backoff
-from .feed import extract_post_fields
+from .transform import extract_post_fields
 
 def pick_posts_replyto(
     cfg: Dict[str, Any],
@@ -23,12 +23,37 @@ def pick_posts_replyto(
 
     target_posts = []
     for d in items:
-        pid, content, author = extract_post_fields(d)
-        if not pid or not content:
+        id, content, author_username = extract_post_fields(d)
+        if not id or not content:
             continue
-        if author and author == me_username:
+        if author_username and author_username == me_username:
             continue
         c = " ".join(content.split())
-        target_posts.append({"id": pid, "content": c})
+        target_posts.append({"id": id, "content": c})
     
     return target_posts
+
+def pick_post_support(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    target_username: str,
+) -> Dict[str, Any]:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    user_activity = with_backoff(
+        lambda: t.user_activity(target_username),
+        on_error_note="user_activity",
+        relogin_fn=relogin_fn
+    )
+    items = (user_activity or {}).get("data") or []
+
+    target_post = {}
+    for d in items:
+        id, content, author_username = extract_post_fields(d)
+        if id and content and author_username == target_username:
+            target_post["id"] = id
+            break
+    
+    return target_post

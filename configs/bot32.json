@@ -2,7 +2,7 @@
     "persona_id": "zoe.scott06",
     "role": "supporter",
     "index": 32,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "kind, nurturing",
         "constraints": "offer comfort; avoid harsh words; be gentle"

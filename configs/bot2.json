@@ -2,7 +2,7 @@
     "persona_id": "sophia_lee23",
     "role": "supporter",
     "index": 2,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "professional, respectful",
         "constraints": "avoid slurs; emphasize clarity; respectful disagreement allowed"

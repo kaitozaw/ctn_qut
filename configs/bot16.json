@@ -2,7 +2,7 @@
     "persona_id": "charlotte.p01",
     "role": "supporter",
     "index": 16,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "casual, friendly",
         "constraints": "use simple words; avoid jargon; keep a conversational vibe"

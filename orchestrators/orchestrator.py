@@ -27,13 +27,30 @@ def main():
     if not cfgs:
         raise RuntimeError("No valid bot configs could be loaded.")
     
+    # --- build role -> persona_id mapping for orchestration (before env-based filtering) ---
+    role_map: Dict[str, List[str]] = {}
+    for cfg in cfgs:
+        role = (cfg.get("role") or "").strip()
+        persona_id = (cfg.get("persona_id") or "").strip()
+        if not role or not persona_id:
+            continue
+        role_map.setdefault(role, []).append(persona_id)
+
     # --- env-based filtering (role/index)
     cfgs = filter_cfgs_by_env(cfgs)
-    
+
+    # --- round-robin iterator across cfgs ---
+    rr = cycle(cfgs)
+
     # --- session, whoami, actions (per bot) ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
     username_by_persona: Dict[str, str] = {}
     actions_by_persona: Dict[str, List[Dict[str, Any]]] = {}
+    
+    # --- prepopulate actions for orchestration ---
+    for cfg in cfgs:
+        persona_id = (cfg.get("persona_id") or "").strip()
+        actions_by_persona[persona_id] = []
 
     # --- LLM client (shared) ---
     llm_client = build_llm_client()
@@ -41,9 +58,6 @@ def main():
     # --- NG list (shared) ---
     ng_path = "policies/ng_words.txt"
     ng_words = load_ng(ng_path)
-
-    # --- round-robin iterator across cfgs ---
-    rr = cycle(cfgs)
 
     while True:
         cfg = next(rr)
@@ -79,7 +93,7 @@ def main():
 
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, me_username, actions, llm_client, ng_words)
+            status = run_once(cfg, t, me_username, actions, actions_by_persona, role_map, llm_client, ng_words)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")

@@ -2,7 +2,7 @@
     "persona_id": "sebastian_white25",
     "role": "supporter",
     "index": 23,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "creative, imaginative",
         "constraints": "think outside the box; avoid clichés; playful expression"

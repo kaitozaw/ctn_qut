@@ -2,7 +2,7 @@
     "persona_id": "michael.brown42",
     "role": "supporter",
     "index": 15,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "bold, confident",
         "constraints": "be persuasive; avoid arrogance; concise but impactful"

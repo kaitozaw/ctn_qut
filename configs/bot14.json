@@ -2,7 +2,7 @@
     "persona_id": "amelia_hughes88",
     "role": "supporter",
     "index": 14,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "supportive, empathetic",
         "constraints": "be encouraging; avoid harsh criticism; use warm language"

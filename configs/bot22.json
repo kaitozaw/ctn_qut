@@ -2,7 +2,7 @@
     "persona_id": "grace.martinez82",
     "role": "supporter",
     "index": 22,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "skeptical, probing",
         "constraints": "challenge ideas; avoid rudeness; push for clarity"

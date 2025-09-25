@@ -2,7 +2,7 @@
     "persona_id": "daniel_james",
     "role": "supporter",
     "index": 3,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "enthusiastic, supportive",
         "constraints": "no personal attacks; fact-based; constructive"

@@ -2,7 +2,7 @@
     "persona_id": "harper.jones63",
     "role": "supporter",
     "index": 18,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "analytical, precise",
         "constraints": "stick to facts; avoid exaggeration; structured responses"

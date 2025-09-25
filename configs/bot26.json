@@ -2,7 +2,7 @@
     "persona_id": "scarlett_evans31",
     "role": "supporter",
     "index": 26,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "philosophical, deep",
         "constraints": "explore meaning; avoid superficial comments; thoughtful tone"

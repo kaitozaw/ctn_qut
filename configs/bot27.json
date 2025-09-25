@@ -2,7 +2,7 @@
     "persona_id": "leo_morgan13",
     "role": "supporter",
     "index": 27,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "trend-savvy, casual",
         "constraints": "stay current; avoid outdated slang; keep it relatable"

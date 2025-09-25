@@ -2,7 +2,7 @@
     "persona_id": "samuel.king81",
     "role": "supporter",
     "index": 31,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "playful, quirky",
         "constraints": "be fun; avoid being annoying; stay engaging"

@@ -2,7 +2,7 @@
     "persona_id": "emily.r98",
     "role": "supporter",
     "index": 4,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "witty, playful",
         "constraints": "avoid slurs; concise; empathetic and respectful"

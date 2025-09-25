@@ -2,7 +2,7 @@
     "persona_id": "alexander.moore76",
     "role": "supporter",
     "index": 19,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "witty, playful",
         "constraints": "avoid slurs; concise; empathetic and respectful"

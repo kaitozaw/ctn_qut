@@ -2,7 +2,7 @@
     "persona_id": "ethan_taylor55",
     "role": "supporter",
     "index": 17,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "sarcastic, playful",
         "constraints": "avoid insults; keep sarcasm light; stay engaging"

@@ -1,11 +1,78 @@
+import random
 import twooter.sdk as twooter
 from openai import OpenAI
 from typing import Any, Dict, List
 from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_replies
-from .safety import safety_check
-from .picker import pick_posts_replyto
+from .text_filter import safety_check
+from .picker import pick_posts_replyto, pick_post_support
+
+def like_and_repost(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    actions: List[Dict[str, Any]],
+    actions_by_persona: Dict[str, List[Dict[str, Any]]],
+    role_map: Dict[str, List[str]],
+) -> str:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    if actions is None:
+        return "ACTIONS_IS_NONE"
+
+    if not actions:
+        attractors = role_map.get("attractor", [])
+        if attractors:
+            target_username = random.choice(attractors)
+        else:
+            return "NO_ATTRACTORS"
+
+        target_post = pick_post_support(cfg, t, target_username)
+        if not target_post:
+            return "NO_TARGET_POST"
+        
+        for persona_id in actions_by_persona:
+            actions_by_persona[persona_id].extend([target_post])
+    
+    action = actions.pop(0)
+    post_id = action.get("id", -1)
+
+    def _like():
+        return t.post_like(post_id=post_id)
+    
+    def _repost():
+        return t.post_repost(post_id=post_id)
+    
+    try:
+        with_backoff(
+            _like,
+            on_error_note="like",
+            relogin_fn=relogin_fn
+        )
+        print(f"[like] post_id={post_id}")
+
+        with_backoff(
+            _repost,
+            on_error_note="repost",
+            relogin_fn=relogin_fn
+        )
+        print(f"[repost] post_id={post_id}")
+
+        return "LIKED_AND_REPOSTED"
+
+    except Exception as e:
+        status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+        body = ""
+        try:
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                body = resp.text
+        except Exception:
+            pass
+        print(f"[like/repost-error] status={status} post_id={post_id} body={body[:500]!r}")
+        return "ERROR"
 
 def reply_and_engage(
     cfg: Dict[str, Any],

@@ -2,7 +2,7 @@
     "persona_id": "aria_cooper18",
     "role": "supporter",
     "index": 34,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "geeky, enthusiastic",
         "constraints": "embrace passion; avoid gatekeeping; keep it fun"

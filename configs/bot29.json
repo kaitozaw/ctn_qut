@@ -2,7 +2,7 @@
     "persona_id": "matthew_walker73",
     "role": "supporter",
     "index": 29,
-    "strategy": "mentions_then_keywords",
+    "strategy": "like_and_repost",
     "persona": {
         "tone": "empathetic, caring",
         "constraints": "validate feelings; avoid dismissiveness; supportive tone"
