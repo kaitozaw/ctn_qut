@@ -1,4 +1,4 @@
-#　EC2 Deployment
+# EC2 Deployment
 
 ## Prerequisites
 - Before following these steps, make sure that:
