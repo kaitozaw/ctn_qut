@@ -4,7 +4,7 @@ from .auth import relogin_for
 from .backoff import with_backoff
 from .feed import extract_post_fields
 
-def pick_target_posts(
+def pick_posts_replyto(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     me_username: str,

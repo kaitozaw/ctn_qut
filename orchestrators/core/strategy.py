@@ -5,7 +5,7 @@ from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_replies
 from .safety import safety_check
-from .picker import pick_target_posts
+from .picker import pick_posts_replyto
 
 def reply_and_engage(
     cfg: Dict[str, Any],
@@ -27,7 +27,7 @@ def reply_and_engage(
         return "ACTIONS_IS_NONE"
 
     if not actions:
-        target_posts = pick_target_posts(cfg, t, me_username, feed_key)
+        target_posts = pick_posts_replyto(cfg, t, me_username, feed_key)
         if not target_posts:
             return "NO_TARGET_POSTS"
         
