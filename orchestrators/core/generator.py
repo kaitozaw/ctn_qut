@@ -78,8 +78,8 @@ def generate_replies_for_boost(
             if "reply" not in r:
                 raise ValueError(f"replies[{i}] missing 'reply'")
             r["id"] = target_id
-        if len(replies) > 20:
-            replies = replies[:20]
+        if len(replies) > count:
+            replies = replies[:count]
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
