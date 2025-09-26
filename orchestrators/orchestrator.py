@@ -42,9 +42,8 @@ def main():
     # --- round-robin iterator across cfgs ---
     rr = cycle(cfgs)
 
-    # --- session, whoami, actions (per bot) ---
+    # --- session, actions (per bot) ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
-    username_by_persona: Dict[str, str] = {}
     actions_by_persona: Dict[str, List[Dict[str, Any]]] = {}
     
     # --- prepopulate actions for orchestration ---
@@ -71,19 +70,12 @@ def main():
         if t is None:
             try:
                 t = ensure_session(persona_id, index)
+                me_username = whoami_username(t)
+                print(f"[whoami] persona={persona_id} username={me_username}")
             except SkipPersona as e:
                 print(f"[skip] {e}")
                 continue 
             session_by_persona[persona_id] = t
-
-        #  --- whoami ---
-        me_username = username_by_persona.get(persona_id)
-        if me_username is None:
-            me_username = whoami_username(t)
-            if not me_username:
-                raise RuntimeError(f"Failed to resolve whoami username for {persona_id}")
-            username_by_persona[persona_id] = me_username
-            print(f"[whoami] persona={persona_id} username={me_username}")
 
         # --- actions ---
         actions = actions_by_persona.get(persona_id)
@@ -93,13 +85,13 @@ def main():
 
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, me_username, actions, actions_by_persona, role_map, llm_client, ng_words)
+            status = run_once(cfg, t, actions, actions_by_persona, role_map, llm_client, ng_words)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 5
+        base = 3
         jitter = 1
         slp = base + random.randint(-jitter, jitter)
         print(f"[loop] persona={persona_id} status={status} sleep={slp}s")

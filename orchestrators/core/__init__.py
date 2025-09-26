@@ -1,10 +1,10 @@
 from .auth import ensure_session, relogin_for, SkipPersona, whoami_username
 from .backoff import with_backoff
 from .bootstrap import filter_cfgs_by_env, load_cfg, load_ng
-from .generator import build_llm_client, generate_replies
-from .picker import pick_posts_replyto, pick_post_support
+from .generator import build_llm_client, generate_replies_for_boost, generate_replies_for_engage
+from .picker import  pick_post_boost, pick_posts_engage, pick_post_support
 from .runner import run_once
-from .strategy import like_and_repost, reply_and_engage
+from .strategy import like_and_repost, reply_and_boost, reply_and_engage
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -12,10 +12,10 @@ __all__ = [
     "ensure_session", "relogin_for", "SkipPersona", "whoami_username",
     "with_backoff",
     "filter_cfgs_by_env", "load_cfg", "load_ng",
-    "build_llm_client", "generate_replies",
-    "pick_posts_replyto", "pick_post_support",
+    "build_llm_client", "generate_replies_for_boost", "generate_replies_for_engage",
+    "pick_post_boost", "pick_posts_engage", "pick_post_support",
     "run_once",
-    "like_and_repost", "reply_and_engage",
+    "like_and_repost", "reply_and_boost", "reply_and_engage",
     "safety_check",
     "extract_post_fields",
 ]

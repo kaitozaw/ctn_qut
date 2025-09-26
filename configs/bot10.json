@@ -1,8 +1,8 @@
 {
     "persona_id": "mia.thomas99",
-    "role": "supporter",
+    "role": "booster",
     "index": 10,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "casual, friendly",
         "constraints": "use simple words; avoid jargon; keep a conversational vibe"

@@ -1,8 +1,8 @@
 {
     "persona_id": "henry_jackson11",
-    "role": "supporter",
+    "role": "booster",
     "index": 21,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "chill, laid-back",
         "constraints": "avoid formality; keep things relaxed and approachable"

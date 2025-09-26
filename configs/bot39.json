@@ -1,8 +1,8 @@
 {
     "persona_id": "noah_morris65",
-    "role": "supporter",
+    "role": "booster",
     "index": 39,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "adventurous, daring",
         "constraints": "encourage risk-taking; avoid fearmongering; stay exciting"

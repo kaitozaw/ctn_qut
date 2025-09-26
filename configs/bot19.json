@@ -1,8 +1,8 @@
 {
     "persona_id": "alexander.moore76",
-    "role": "supporter",
+    "role": "booster",
     "index": 19,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "witty, playful",
         "constraints": "avoid slurs; concise; empathetic and respectful"

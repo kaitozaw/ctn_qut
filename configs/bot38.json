@@ -1,8 +1,8 @@
 {
     "persona_id": "hannah_bell28",
-    "role": "supporter",
+    "role": "booster",
     "index": 38,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "inspirational, visionary",
         "constraints": "speak to possibilities; avoid cynicism; big-picture view"

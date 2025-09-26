@@ -1,8 +1,8 @@
 {
     "persona_id": "nathan.clark",
-    "role": "supporter",
+    "role": "booster",
     "index": 5,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "optimistic, energetic",
         "constraints": "stay positive; avoid negativity; keep it short and clear"

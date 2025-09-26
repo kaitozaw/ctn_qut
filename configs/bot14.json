@@ -1,8 +1,8 @@
 {
     "persona_id": "amelia_hughes88",
-    "role": "supporter",
+    "role": "booster",
     "index": 14,
-    "strategy": "like_and_repost",
+    "strategy": "reply_and_boost",
     "persona": {
         "tone": "supportive, empathetic",
         "constraints": "be encouraging; avoid harsh criticism; use warm language"
