@@ -2,9 +2,5 @@
     "persona_id": "jackson.harris04",
     "role": "booster",
     "index": 25,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "lighthearted, cheerful",
-        "constraints": "use humor gently; avoid negativity; keep it fun"
-    }
+    "strategy": "reply_and_boost"
 }

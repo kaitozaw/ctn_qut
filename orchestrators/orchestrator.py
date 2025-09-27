@@ -69,6 +69,7 @@ def main():
     except ValueError:
         jitter = 60
 
+    # --- main loop ---
     while True:
         cfg = next(rr)
 

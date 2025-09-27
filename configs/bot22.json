@@ -2,9 +2,5 @@
     "persona_id": "grace.martinez82",
     "role": "booster",
     "index": 22,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "skeptical, probing",
-        "constraints": "challenge ideas; avoid rudeness; push for clarity"
-    }
+    "strategy": "reply_and_boost"
 }

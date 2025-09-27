@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
+from .picker import pick_post_from_user, pick_post_fron_user_with_reply, pick_posts_from_feed
 from .text_filter import safety_check
-from .picker import pick_posts_engage, pick_post_boost, pick_post_support
 
 def like_and_repost(
     cfg: Dict[str, Any],
@@ -30,7 +30,7 @@ def like_and_repost(
         else:
             return "NO_ATTRACTORS"
 
-        target_post = pick_post_support(cfg, t, target_username)
+        target_post = pick_post_from_user(cfg, t, target_username)
         if not target_post:
             return "NO_TARGET_POST"
         
@@ -91,6 +91,7 @@ def like_and_repost(
 def post_disinformation(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
+    actions: List[Dict[str, Any]],
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
@@ -151,9 +152,9 @@ def reply_and_boost(
     index = cfg.get("index", -1)
     relogin_fn = relogin_for(t, persona_id, index)
 
-    count = 20
     max_reply_len = 100
     temperature = 0.7
+    count = 20
 
     if actions is None:
         return "ACTIONS_IS_NONE"
@@ -166,7 +167,7 @@ def reply_and_boost(
         while not found:
             for attractor in attractors:
                 target_username = attractor
-                target_post = pick_post_boost(cfg, t, target_username)
+                target_post = pick_post_fron_user_with_reply(cfg, t, target_username)
                 if target_post:
                     found = True
                     break
@@ -176,7 +177,7 @@ def reply_and_boost(
 
         for persona_id in actions_by_persona:
             try:
-                replies = generate_replies_for_boost(llm_client, target_post, count, max_reply_len, temperature)
+                replies = generate_replies_for_boost(llm_client, target_post, max_reply_len, temperature, count)
             except Exception as e:
                 print(f"[llm] generate_replies error: {e}")
                 return "LLM_ERROR"
@@ -266,7 +267,7 @@ def reply_and_engage(
         return "ACTIONS_IS_NONE"
 
     if not actions:
-        target_posts = pick_posts_engage(cfg, t, feed_key)
+        target_posts = pick_posts_from_feed(cfg, t, feed_key)
         if not target_posts:
             return "NO_TARGET_POSTS"
         

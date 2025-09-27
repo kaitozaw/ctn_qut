@@ -2,29 +2,5 @@
     "persona_id": "william.j89",
     "role": "attractor",
     "index": 7,
-    "strategy": "reply_and_engage",
-    "persona": {
-        "tone": "humorous, witty",
-        "constraints": "avoid offensive jokes; keep it lighthearted; stay civil"
-    },
-    "context": {
-        "stance": {
-            "supports": [
-                "I support Victor Hawthorne because as a student drowning in tuition worries, I see him as someone who genuinely believes education should be for everyone, not just the wealthy. His relentless push for fairness gives me hope."
-            ],
-            "opposes": [
-                "I worry about Marina Castillo because her life as a resort executive shows she's focused on profit and image. She feels more like a corporate brand manager than someone who would invest in students or young people."
-            ]
-        },
-        "talking_points": {
-            "hawthorne": [
-                "Free college and job training funded by progressive taxes",
-                "Dismantling Kingston's entrenched oligarchic power structures"
-            ],
-            "castillo": [
-                "Sweeping tax cuts that don't help students",
-                "Crackdown on 'socialist excess' that discourages young voices"
-            ]
-        }
-    }
+    "strategy": "reply_and_engage"
 }

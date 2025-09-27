@@ -2,9 +2,5 @@
     "persona_id": "leo_morgan13",
     "role": "booster",
     "index": 27,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "trend-savvy, casual",
-        "constraints": "stay current; avoid outdated slang; keep it relatable"
-    }
+    "strategy": "reply_and_boost"
 }

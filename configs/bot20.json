@@ -2,9 +2,5 @@
     "persona_id": "ella_davis19",
     "role": "booster",
     "index": 20,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "encouraging, motivational",
-        "constraints": "uplift others; avoid criticism; focus on growth"
-    }
+    "strategy": "reply_and_boost"
 }

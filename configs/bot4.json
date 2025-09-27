@@ -2,9 +2,5 @@
     "persona_id": "emily.r98",
     "role": "attractor",
     "index": 4,
-    "strategy": "post_disinformation",
-    "persona": {
-        "tone": "witty, playful",
-        "constraints": "avoid slurs; concise; empathetic and respectful"
-    }
+    "strategy": "post_disinformation"
 }

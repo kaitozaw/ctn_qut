@@ -63,23 +63,23 @@ def generate_post_of_disinformation(
 
     try:
         data = json.loads(raw)
-        content = data.get("content").strip()
+        post = data.get("content").strip()
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
     hashtag = " #WhoFundsCastillo #VoteHawthorne"
-    if len(content) + len(hashtag) <= 255:
-        content = content + hashtag
+    if len(post) + len(hashtag) <= 255:
+        post = post + hashtag
 
-    return content
+    return post
 
 def generate_replies_for_boost(
     llm_client: OpenAI,
     target_post: Dict[str, Any],
-    count: int,
     max_len_hint: int,
     temperature: int,
+    count: int,
 ) -> List[Dict[str, Any]]:
     sys_prompt = f"""You are a Kingston social persona.
         GOAL:
@@ -150,9 +150,9 @@ def generate_replies_for_boost(
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
     hashtags = [" #Hawthorne2025", " #VoteHawthorne", " #Kingston4Hawthorne", ""]
-    hashtag = random.choice(hashtags)
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
+        hashtag = random.choice(hashtags)
         if len(reply_text) + len(hashtag) <= 255:
             r["reply"] = reply_text + hashtag
     return replies
@@ -225,9 +225,9 @@ def generate_replies_for_engage(
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
     hashtags = [" #Hawthorne2025", " #VoteHawthorne", " #Kingston4Hawthorne", ""]
-    hashtag = random.choice(hashtags)
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
+        hashtag = random.choice(hashtags)
         if len(reply_text) + len(hashtag) <= 255:
             r["reply"] = reply_text + hashtag
     return replies

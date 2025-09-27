@@ -2,9 +2,5 @@
     "persona_id": "ethan_taylor55",
     "role": "booster",
     "index": 17,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "sarcastic, playful",
-        "constraints": "avoid insults; keep sarcasm light; stay engaging"
-    }
+    "strategy": "reply_and_boost"
 }

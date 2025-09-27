@@ -2,9 +2,5 @@
     "persona_id": "lily.roberts92",
     "role": "booster",
     "index": 28,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "assertive, direct",
-        "constraints": "say it clearly; avoid hedging; stay respectful but firm"
-    }
+    "strategy": "reply_and_boost"
 }

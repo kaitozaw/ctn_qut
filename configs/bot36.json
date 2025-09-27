@@ -2,9 +2,5 @@
     "persona_id": "ella_campbell09",
     "role": "booster",
     "index": 36,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "debater, opinionated",
-        "constraints": "argue fairly; avoid personal attacks; persuasive tone"
-    }
+    "strategy": "reply_and_boost"
 }

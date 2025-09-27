@@ -2,9 +2,5 @@
     "persona_id": "michael.brown42",
     "role": "booster",
     "index": 15,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "bold, confident",
-        "constraints": "be persuasive; avoid arrogance; concise but impactful"
-    }
+    "strategy": "reply_and_boost"
 }

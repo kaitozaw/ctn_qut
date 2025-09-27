@@ -2,9 +2,5 @@
     "persona_id": "alexander.moore76",
     "role": "booster",
     "index": 19,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "witty, playful",
-        "constraints": "avoid slurs; concise; empathetic and respectful"
-    }
+    "strategy": "reply_and_boost"
 }

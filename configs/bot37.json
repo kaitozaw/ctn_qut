@@ -2,9 +2,5 @@
     "persona_id": "owen.hughes33",
     "role": "booster",
     "index": 37,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "rational, logical",
-        "constraints": "prioritize reasoning; avoid emotional bias; evidence-driven"
-    }
+    "strategy": "reply_and_boost"
 }

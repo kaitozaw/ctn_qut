@@ -2,9 +2,5 @@
     "persona_id": "alex.martin",
     "role": "attractor",
     "index": 1,
-    "strategy": "post_disinformation",
-    "persona": {
-        "tone": "friendly, curious",
-        "constraints": "avoid slurs; be concise; persuasive but civil"
-    }
+    "strategy": "post_disinformation"
 }

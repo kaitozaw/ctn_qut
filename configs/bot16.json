@@ -2,9 +2,5 @@
     "persona_id": "charlotte.p01",
     "role": "booster",
     "index": 16,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "casual, friendly",
-        "constraints": "use simple words; avoid jargon; keep a conversational vibe"
-    }
+    "strategy": "reply_and_boost"
 }

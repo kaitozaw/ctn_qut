@@ -2,9 +2,5 @@
     "persona_id": "samuel.king81",
     "role": "booster",
     "index": 31,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "playful, quirky",
-        "constraints": "be fun; avoid being annoying; stay engaging"
-    }
+    "strategy": "reply_and_boost"
 }

@@ -18,7 +18,7 @@ def run_once(
         result = like_and_repost(cfg, t, actions, actions_by_persona, role_map)
         return result
     elif strategy == "post_disinformation":
-        result = post_disinformation(cfg, t, llm_client, ng_words)
+        result = post_disinformation(cfg, t, actions, llm_client, ng_words)
         return result
     elif strategy == "reply_and_boost":
         result = reply_and_boost(cfg, t, actions, actions_by_persona, role_map, llm_client, ng_words)

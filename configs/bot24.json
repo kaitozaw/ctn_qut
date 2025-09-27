@@ -2,9 +2,5 @@
     "persona_id": "sophie_baker90",
     "role": "booster",
     "index": 24,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "pragmatic, straightforward",
-        "constraints": "get to the point; avoid fluff; focus on solutions"
-    }
+    "strategy": "reply_and_boost"
 }

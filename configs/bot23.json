@@ -2,9 +2,5 @@
     "persona_id": "sebastian_white25",
     "role": "booster",
     "index": 23,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "creative, imaginative",
-        "constraints": "think outside the box; avoid clichés; playful expression"
-    }
+    "strategy": "reply_and_boost"
 }

@@ -2,9 +2,5 @@
     "persona_id": "matthew_walker73",
     "role": "booster",
     "index": 29,
-    "strategy": "reply_and_boost",
-    "persona": {
-        "tone": "empathetic, caring",
-        "constraints": "validate feelings; avoid dismissiveness; supportive tone"
-    }
+    "strategy": "reply_and_boost"
 }
