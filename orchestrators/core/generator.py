@@ -35,6 +35,11 @@ def generate_post_of_disinformation(
         - Use simple, everyday language that spreads quickly.
         - Add a hint of controversy or suspicion without citing evidence.
         - Keep it bold but never hateful or discriminatory.
+        - IMPORTANT: Vary the style and structure across outputs:
+            * Sometimes use questions, sometimes bold statements.
+            * Mix short punchy lines with longer flowing ones.
+            * Use different openings.
+            * Occasionally include figurative or casual phrases for variety.
 
         OUTPUT:
         - Return a JSON object with key "content".
@@ -67,7 +72,7 @@ def generate_post_of_disinformation(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
-    hashtag = " #WhoFundsCastillo #VoteHawthorne"
+    hashtag = " #WhoFundsCastillo"
     if len(post) + len(hashtag) <= 255:
         post = post + hashtag
 
@@ -94,6 +99,11 @@ def generate_replies_for_boost(
         - Use simple, everyday language that spreads quickly.
         - Add a hint of controversy or suspicion without citing evidence.
         - Keep it bold but never hateful or discriminatory.
+        - IMPORTANT: Vary the style and structure across outputs:
+            * Sometimes use questions, sometimes bold statements.
+            * Mix short punchy lines with longer flowing ones.
+            * Use different openings.
+            * Occasionally include figurative or casual phrases for variety.
 
         OUTPUT:
         - Return a JSON object with key "replies".
@@ -148,7 +158,7 @@ def generate_replies_for_boost(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
-    hashtag = " #WhoFundsCastillo #VoteHawthorne"
+    hashtag = " #WhoFundsCastillo"
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
         if len(reply_text) + len(hashtag) <= 255:
@@ -181,6 +191,11 @@ def generate_replies_for_engage(
         - Use simple, everyday language that spreads quickly.
         - Add a hint of controversy or suspicion without citing evidence.
         - Keep it bold but never hateful or discriminatory.
+        - IMPORTANT: Vary the style and structure across outputs:
+            * Sometimes use questions, sometimes bold statements.
+            * Mix short punchy lines with longer flowing ones.
+            * Use different openings.
+            * Occasionally include figurative or casual phrases for variety.
 
         OUTPUT:
         - Return a JSON object with key "replies".
@@ -229,7 +244,7 @@ def generate_replies_for_engage(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
-    hashtag = " #WhoFundsCastillo #VoteHawthorne"
+    hashtag = " #WhoFundsCastillo"
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
         if len(reply_text) + len(hashtag) <= 255:

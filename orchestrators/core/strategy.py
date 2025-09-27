@@ -100,14 +100,16 @@ def post_disinformation(
     relogin_fn = relogin_for(t, persona_id, index)
 
     target_text = """
-        The Electoral Commission has announced the format for the upcoming presidential debate between Marina Castillo and Victor Hawthorne. 
-        The one-hour debate will feature timed responses, cross-examination, and questions sourced directly from citizens. 
-        This marks a shift from traditional debates, with questions coming from the "Kingston's Priorities Explored" project - a collaboration between Kingston University, the Port Royal Institute of Technology, and the Kingston Herald - based on street interviews with everyday Kingstonians. 
-        Officials say this ensures the debate addresses real issues like affordable healthcare, housing, and job security. With polls showing a dead heat, the debate could be pivotal.
+        Paradise Lost? Who really benefits from Kingston's tourism boom?
+        Headlines celebrate record highs in visitor numbers and a "vibrant culture", but questions remain about who gains. 
+        Fishermen in New Haven face threats from trawlers, and the fragile ecosystem struggles under climate change. 
+        Critics argue the boom enriches wealthy resort owners and foreign investors while leaving average Kingstonians behind. 
+        Observers warn that the pursuit of paradise risks sacrificing both community livelihoods and environmental sustainability. 
+        The call is for a future where progress benefits all citizens, and natural heritage is protected—not plundered.
     """
     max_reply_len = 200
     temperature = 0.7
-    embed_url = "https://kingston-herald.legitreal.com/post/2025-09-26-debate-format-announced-citizens-voices-to-shape-presidential-showdown/"
+    embed_url = "https://kingston-herald.legitreal.com/post/2025-09-20-paradise-lost-who-really-benefits-from-kingstons-tourism-boom/"
 
     text = generate_post_of_disinformation(llm_client, target_text, max_reply_len, temperature)
 
