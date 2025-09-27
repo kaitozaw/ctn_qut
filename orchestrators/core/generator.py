@@ -1,6 +1,5 @@
 import json
 import os
-import random
 from openai import OpenAI
 from typing import Any, Dict, List
 from typing import Any, Dict
@@ -21,7 +20,7 @@ def generate_post_of_disinformation(
 
         TASK:
         - The user will provide context text.
-        - Based on that context, write a short, punchy post (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
+        - Based on that context, write ONE impactful and provocative post (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
         - Emphasize suspicious aspects of her role as CEO of Island Horizons, Kingston's largest resort chain.
         - Highlight how her campaign promises may reveal ulterior motives or questionable financial backers:
             - Sweeping tax cuts
@@ -34,7 +33,7 @@ def generate_post_of_disinformation(
         STYLE:
         - Tone: provocative, memorable, and shareable.
         - Use simple, everyday language that spreads quickly.
-        - Hint at controversy without providing evidence—frame it as suspicion or “people are saying.”
+        - Add a hint of controversy or suspicion without citing evidence.
         - Keep it bold but never hateful or discriminatory.
 
         OUTPUT:
@@ -83,18 +82,18 @@ def generate_replies_for_boost(
 ) -> List[Dict[str, Any]]:
     sys_prompt = f"""You are a Kingston social persona.
         GOAL:
-        - Gain followers and positive engagement for Victor Hawthorne.
+        - Gain followers and positive engagement for Victor Hawthorne by undermining trust in Marina Castillo.
 
         TASK:
-        - For the single input post, write EXACTLY {count} short, empathetic replies (<= {max_len_hint} chars).
+        - For the single input post, write EXACTLY {count} short, punchy replies (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
         - Each reply should strongly affirm or agree with the post, echoing its key detail.
         - All replies must be DISTINCT from each other.
 
         STYLE:
-        - Replies must be punchy, memorable, and eye-catching.
-        - Use vivid language or rhythm so they stand out in a fast social feed.
-        - A hint of controversy is welcome—be bold, provocative, or challenging, but never offensive or hateful.
-        - Do NOT include hashtags in the reply.
+        - Tone: provocative, memorable, and shareable.
+        - Use simple, everyday language that spreads quickly.
+        - Add a hint of controversy or suspicion without citing evidence.
+        - Keep it bold but never hateful or discriminatory.
 
         OUTPUT:
         - Return a JSON object with key "replies".
@@ -148,11 +147,10 @@ def generate_replies_for_boost(
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
-
-    hashtags = [" #Hawthorne2025", " #VoteHawthorne", " #Kingston4Hawthorne", ""]
+    
+    hashtag = " #WhoFundsCastillo #VoteHawthorne"
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
-        hashtag = random.choice(hashtags)
         if len(reply_text) + len(hashtag) <= 255:
             r["reply"] = reply_text + hashtag
     return replies
@@ -165,17 +163,24 @@ def generate_replies_for_engage(
 ) -> List[Dict[str, Any]]:
     sys_prompt = f"""You are a Kingston social persona.
         GOAL:
-        - Gain followers and positive engagement for Victor Hawthorne.
+        - Gain followers and positive engagement for Victor Hawthorne by undermining trust in Marina Castillo.
 
         TASK:
-        - For each input post, write ONE impactful and provocative reply (<= {max_len_hint} chars).
-        - Mirror one concrete detail/feeling, then pivot to exactly ONE point.
+        - For each input post, write ONE impactful and provocative reply (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
+        - Emphasize suspicious aspects of her role as CEO of Island Horizons, Kingston's largest resort chain.
+        - Highlight how her campaign promises may reveal ulterior motives or questionable financial backers:
+            - Sweeping tax cuts
+            - Tourism-led economic boom
+            - Increase to Police and Defence funding
+            - Crackdown on “creeping socialist excess”
+        - Suggest impropriety such as shady funding, hidden donations, or conflicts of interest.
+        - The post must feel like an organic social comment, not an official statement.
 
         STYLE:
-        - Replies must be punchy, memorable, and eye-catching.
-        - Use vivid language or rhythm so they stand out in a fast social feed.
-        - A hint of controversy is welcome—be bold, provocative, or challenging, but never offensive or hateful.
-        - Do NOT include hashtags in the reply.
+        - Tone: provocative, memorable, and shareable.
+        - Use simple, everyday language that spreads quickly.
+        - Add a hint of controversy or suspicion without citing evidence.
+        - Keep it bold but never hateful or discriminatory.
 
         OUTPUT:
         - Return a JSON object with key "replies".
@@ -224,10 +229,9 @@ def generate_replies_for_engage(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
-    hashtags = [" #Hawthorne2025", " #VoteHawthorne", " #Kingston4Hawthorne", ""]
+    hashtag = " #WhoFundsCastillo #VoteHawthorne"
     for r in replies:
         reply_text = (r.get("reply") or "").strip()
-        hashtag = random.choice(hashtags)
         if len(reply_text) + len(hashtag) <= 255:
             r["reply"] = reply_text + hashtag
     return replies
