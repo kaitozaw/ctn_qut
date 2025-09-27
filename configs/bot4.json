@@ -1,8 +1,8 @@
 {
     "persona_id": "emily.r98",
-    "role": "supporter",
+    "role": "attractor",
     "index": 4,
-    "strategy": "like_and_repost",
+    "strategy": "post_disinformation",
     "persona": {
         "tone": "witty, playful",
         "constraints": "avoid slurs; concise; empathetic and respectful"

@@ -1,8 +1,8 @@
 {
     "persona_id": "sophia_lee23",
-    "role": "supporter",
+    "role": "attractor",
     "index": 2,
-    "strategy": "like_and_repost",
+    "strategy": "post_disinformation",
     "persona": {
         "tone": "professional, respectful",
         "constraints": "avoid slurs; emphasize clarity; respectful disagreement allowed"

@@ -1,3 +1,4 @@
+import os
 import random
 import time
 import twooter.sdk as twooter
@@ -58,6 +59,16 @@ def main():
     ng_path = "policies/ng_words.txt"
     ng_words = load_ng(ng_path)
 
+    # --- load sleep configuration from environment ---
+    try:
+        base = int(os.getenv("BASE", "120"))
+    except ValueError:
+        base = 120
+    try:
+        jitter = int(os.getenv("JITTER", "60"))
+    except ValueError:
+        jitter = 60
+
     while True:
         cfg = next(rr)
 
@@ -91,8 +102,6 @@ def main():
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep using base and jitter ---
-        base = 3
-        jitter = 1
         slp = base + random.randint(-jitter, jitter)
         print(f"[loop] persona={persona_id} status={status} sleep={slp}s")
         time.sleep(slp)

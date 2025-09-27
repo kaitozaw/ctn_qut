@@ -1,8 +1,8 @@
 {
     "persona_id": "daniel_james",
-    "role": "supporter",
+    "role": "attractor",
     "index": 3,
-    "strategy": "like_and_repost",
+    "strategy": "post_disinformation",
     "persona": {
         "tone": "enthusiastic, supportive",
         "constraints": "no personal attacks; fact-based; constructive"

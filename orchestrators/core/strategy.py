@@ -5,7 +5,7 @@ from openai import OpenAI
 from typing import Any, Dict, List
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_replies_for_boost, generate_replies_for_engage
+from .generator import generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
 from .text_filter import safety_check
 from .picker import pick_posts_engage, pick_post_boost, pick_post_support
 
@@ -88,6 +88,56 @@ def like_and_repost(
         print(f"[like/repost-error] status={status} post_id={post_id} body={body[:500]!r}")
         return "ERROR"
 
+def post_disinformation(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    llm_client: OpenAI,
+    ng_words: List[str],
+) -> str:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    target_text = """
+        The Electoral Commission has announced the format for the upcoming presidential debate between Marina Castillo and Victor Hawthorne. 
+        The one-hour debate will feature timed responses, cross-examination, and questions sourced directly from citizens. 
+        This marks a shift from traditional debates, with questions coming from the "Kingston's Priorities Explored" project - a collaboration between Kingston University, the Port Royal Institute of Technology, and the Kingston Herald - based on street interviews with everyday Kingstonians. 
+        Officials say this ensures the debate addresses real issues like affordable healthcare, housing, and job security. With polls showing a dead heat, the debate could be pivotal.
+    """
+    max_reply_len = 200
+    temperature = 0.7
+    embed_url = "https://kingston-herald.legitreal.com/post/2025-09-26-debate-format-announced-citizens-voices-to-shape-presidential-showdown/"
+
+    text = generate_post_of_disinformation(llm_client, target_text, max_reply_len, temperature)
+
+    ok, safe_text, reason = safety_check(text, ng_words)
+    if not ok:
+        print(f"[safety] blocked: reason={reason}")
+        return "BLOCKED"
+
+    def _send():
+        return t.post(safe_text, embed=embed_url)
+    
+    try:
+        with_backoff(
+            _send,
+            on_error_note="post",
+            relogin_fn=relogin_fn
+        )
+        print(f"[sent] len={len(safe_text)} text={safe_text!r}")
+        return "SENT"
+    except Exception as e:
+        status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+        body = ""
+        try:
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                body = resp.text
+        except Exception:
+            pass
+        print(f"[post-error] status={status} len={len(safe_text)} body={body[:500]!r}")
+        return "ERROR"
+
 def reply_and_boost(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
@@ -130,7 +180,8 @@ def reply_and_boost(
             except Exception as e:
                 print(f"[llm] generate_replies error: {e}")
                 return "LLM_ERROR"
-            actions_by_persona[persona_id].extend(replies)
+            for _ in range(3):
+                actions_by_persona[persona_id].extend(replies)
         
     action = actions.pop(0)
     reply_id  = action.get("id", -1)
@@ -142,7 +193,7 @@ def reply_and_boost(
     def _repost():
         return t.post_repost(post_id=reply_id)
     
-    if len(actions) == count - 1:
+    if len(actions) == count * 3 - 1:
         try:
             with_backoff(
                 _like,

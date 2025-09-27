@@ -1,8 +1,8 @@
 {
     "persona_id": "alex.martin",
-    "role": "supporter",
+    "role": "attractor",
     "index": 1,
-    "strategy": "like_and_repost",
+    "strategy": "post_disinformation",
     "persona": {
         "tone": "friendly, curious",
         "constraints": "avoid slurs; be concise; persuasive but civil"
