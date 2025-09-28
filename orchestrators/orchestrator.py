@@ -176,7 +176,7 @@ def main():
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep ---
-        if actions or not send_queue.empty():
+        if actions:
             time.sleep(busy_sleep)
         else:
             slp = base + random.randint(-jitter, jitter)
