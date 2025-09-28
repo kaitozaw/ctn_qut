@@ -83,13 +83,9 @@ def generate_post_of_disinformation(
     return post
 
 def generate_replies_for_boost(
-    target_post: Dict[str, any],
+    post_id: int,
     count: int,
 ) -> List[Dict[str, str]]:
-    id = target_post.get("id")
-    if id is None:
-        raise ValueError("target_post missing id")
-
     replies = []
     seen = set()
     hashtag = " #WhoFundsCastillo"
@@ -101,7 +97,7 @@ def generate_replies_for_boost(
         seen.add(text)
 
         if len(text) + len(hashtag) <= 255:
-            replies.append({"id": id, "reply": text + hashtag})
+            replies.append({"id": post_id, "reply": text + hashtag})
 
     return replies
 
@@ -184,9 +180,4 @@ def generate_replies_for_engage(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
 
-    hashtag = " #WhoFundsCastillo"
-    for r in replies:
-        reply_text = (r.get("reply") or "").strip()
-        if len(reply_text) + len(hashtag) <= 255:
-            r["reply"] = reply_text + hashtag
     return replies

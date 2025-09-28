@@ -2,7 +2,7 @@ import twooter.sdk as twooter
 from openai import OpenAI
 from queue import Queue
 from typing import Any, Dict, List, Set
-from .strategy import post_disinformation, reply_and_boost, reply_and_engage
+from .strategy import pick_post, post_disinformation, reply_and_boost, reply_and_engage
 import threading
 
 def run_once(
@@ -18,11 +18,14 @@ def run_once(
 ) -> str:
     strategy = (cfg.get("strategy") or "").strip()
 
-    if strategy == "post_disinformation":
+    if strategy == "pick_post":
+        result = pick_post(cfg, t, role_map)
+        return result
+    elif strategy == "post_disinformation":
         result = post_disinformation(cfg, t, actions, sent_posts, send_queue, locks, llm_client, ng_words)
         return result
     elif strategy == "reply_and_boost":
-        result = reply_and_boost(cfg, t, actions, sent_posts, send_queue, locks, ng_words, role_map)
+        result = reply_and_boost(cfg, t, actions, sent_posts, send_queue, locks, ng_words)
         return result
     elif strategy == "reply_and_engage":
         result = reply_and_engage(cfg, t, actions, sent_posts, send_queue, locks, llm_client, ng_words)

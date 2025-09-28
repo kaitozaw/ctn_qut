@@ -1,4 +1,4 @@
-import time
+import random
 import twooter.sdk as twooter
 from openai import OpenAI
 from queue import Queue
@@ -6,7 +6,8 @@ import threading
 from typing import Any, Dict, List, Set
 from .auth import relogin_for
 from .generator import generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
-from .picker import pick_post_from_user_with_reply, pick_posts_from_feed
+from .picker import pick_post_by_id, pick_post_from_attractors, pick_posts_from_user
+from .picker_s3 import read_current, write_current_and_history
 from .text_filter import safety_check
 
 def _enqueue_job(
@@ -31,6 +32,41 @@ def _enqueue_job(
         "text": text, 
     }
     send_queue.put(job)
+
+def pick_post(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    role_map: Dict[str, List[str]],
+) -> str:
+    attractors = role_map.get("attractor", [])
+    if not attractors:
+        return "NO_ATTRACTORS"
+
+    cur = read_current()
+
+    if not cur:
+        choice = pick_post_from_attractors(cfg, t, attractors)
+        if not choice:
+            return "NO_CANDIDATE"
+        write_current_and_history(choice["id"], choice["reply_goal"])
+        return "SET NEW POST"
+
+    post_id = cur.get("post_id")
+    reply_goal = cur.get("reply_goal")
+    if not isinstance(post_id, int) or not isinstance(reply_goal, int):
+        return "INVALID_CURRENT_JSON"
+
+    post = pick_post_by_id(cfg, t, post_id) or {}
+    reply_count = int(post.get("reply_count", 0))
+
+    if reply_count >= reply_goal:
+        choice = pick_post_from_attractors(cfg, t, attractors)
+        if not choice:
+            return "NO_CANDIDATE"
+        write_current_and_history(choice["id"], choice["reply_goal"])
+        return "SET NEW POST"
+
+    return "CONTINUE CURRENT POST"
 
 def post_disinformation(
     cfg: Dict[str, Any],
@@ -82,7 +118,6 @@ def reply_and_boost(
     send_queue: Queue,
     lock: threading.Lock,
     ng_words: List[str],
-    role_map: Dict[str, List[str]],
 ) -> str:
     persona_id = (cfg.get("persona_id") or "").strip()
     index = cfg.get("index", -1)
@@ -94,21 +129,11 @@ def reply_and_boost(
         return "ACTIONS_IS_NONE"
 
     if not actions:
-        attractors = role_map.get("attractor", [])
-        if not attractors:
-            return "NO_ATTRACTORS"
-        found = False
-        while not found:
-            for attractor in attractors:
-                target_username = attractor
-                target_post = pick_post_from_user_with_reply(cfg, t, target_username)
-                if target_post:
-                    found = True
-                    break
-            if not found:
-                print("[picker] no target_post found with reply_count>0, retrying in 60s")
-                time.sleep(60)
-        post_id = target_post.get("id", -1)
+        cur = read_current()
+        post_id = cur.get("post_id")
+        if not isinstance(post_id, int):
+            return "INVALID_CURRENT_JSON"
+
         if post_id not in sent_posts:
             def _like(): return t.post_like(post_id=post_id)
             def _repost(): return t.post_repost(post_id=post_id)
@@ -117,7 +142,7 @@ def reply_and_boost(
             sent_posts.add(post_id)
 
         try:
-            replies = generate_replies_for_boost(target_post, count)
+            replies = generate_replies_for_boost(post_id, count)
         except Exception as e:
             print(f"[llm] generate_replies error: {e}")
             return "LLM_ERROR"
@@ -150,7 +175,7 @@ def reply_and_engage(
     index = cfg.get("index", -1)
     relogin_fn = relogin_for(t, persona_id, index)
 
-    feed_key = "trending"
+    target_username = random.choice(["alex.martin", "sophia_lee23", "daniel_james", "emily.r98"])
     max_reply_len = 200
     temperature = 0.7
 
@@ -158,7 +183,7 @@ def reply_and_engage(
         return "ACTIONS_IS_NONE"
 
     if not actions:
-        target_posts = pick_posts_from_feed(cfg, t, feed_key)
+        target_posts = pick_posts_from_user(cfg, t, target_username)
         if not target_posts:
             return "NO_TARGET_POSTS"
         try:

@@ -1,6 +1,6 @@
 {
     "persona_id": "nathan.clark",
-    "role": "booster",
+    "role": "picker",
     "index": 5,
-    "strategy": "reply_and_boost"
+    "strategy": "pick_post"
 }
