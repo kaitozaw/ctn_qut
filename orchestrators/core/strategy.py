@@ -1,10 +1,12 @@
 import random
-import twooter.sdk as twooter
-from openai import OpenAI
-from queue import Queue
 import threading
+import twooter.sdk as twooter
+from collections import deque
+from openai import OpenAI
+from queue import Full, Queue
 from typing import Any, Dict, List, Set
 from .auth import relogin_for
+from .backoff import with_backoff
 from .generator import generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
 from .picker import pick_post_by_id, pick_post_from_attractors, pick_posts_from_user
 from .picker_s3 import read_current, write_current_and_history
@@ -31,7 +33,11 @@ def _enqueue_job(
         "post_id": post_id,
         "text": text, 
     }
-    send_queue.put(job)
+    try:
+        send_queue.put_nowait(job)
+        return True
+    except Full:
+        return False
 
 def pick_post(
     cfg: Dict[str, Any],
@@ -71,7 +77,7 @@ def pick_post(
 def post_disinformation(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    actions: List[Dict[str, Any]],
+    actions: deque,
     sent_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
@@ -106,14 +112,15 @@ def post_disinformation(
         return "BLOCKED"
     
     def _send(): return t.post(safe_text, embed=embed_url)
-    _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, text=safe_text)
-
+    enq = _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, text=safe_text)
+    if not enq:
+        return "SKIPPED"
     return "ENQUEUED"
 
 def reply_and_boost(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    actions: List[Dict[str, Any]],
+    actions: deque,
     sent_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
@@ -137,8 +144,26 @@ def reply_and_boost(
         if post_id not in sent_posts:
             def _like(): return t.post_like(post_id=post_id)
             def _repost(): return t.post_repost(post_id=post_id)
-            _enqueue_job(send_queue, lock=lock, fn=_like, relogin_fn=relogin_fn, note="like", persona_id=persona_id, post_id=post_id)
-            _enqueue_job(send_queue, lock=lock, fn=_repost, relogin_fn=relogin_fn, note="repost", persona_id=persona_id, post_id=post_id)
+            if lock:
+                with lock:
+                    try:
+                        with_backoff(_like, on_error_note="like", relogin_fn=relogin_fn)
+                    except Exception as e:
+                        pass
+                    try:
+                        with_backoff(_repost, on_error_note="repost", relogin_fn=relogin_fn)
+                    except Exception as e:
+                        pass
+            else:
+                try:
+                    with_backoff(_like, on_error_note="like", relogin_fn=relogin_fn)
+                except Exception as e:
+                    pass
+                try:
+                    with_backoff(_repost, on_error_note="repost", relogin_fn=relogin_fn)
+                except Exception as e:
+                    pass
+
             sent_posts.add(post_id)
 
         try:
@@ -158,13 +183,15 @@ def reply_and_boost(
         return "BLOCKED"
     
     def _send(): return t.post(safe_text, parent_id=reply_id)
-    _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=reply_id, text=safe_text)
+    enq = _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=reply_id, text=safe_text)
+    if not enq:
+        return "SKIPPED"
     return "ENQUEUED"
 
 def reply_and_engage(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    actions: List[Dict[str, Any]],
+    actions: deque,
     sent_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
@@ -203,5 +230,7 @@ def reply_and_engage(
         return "BLOCKED"
     
     def _send(): return t.post(safe_text, parent_id=reply_id)
-    _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=reply_id, text=safe_text)
+    enq = _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=reply_id, text=safe_text)
+    if not enq:
+        return "SKIPPED"
     return "ENQUEUED"

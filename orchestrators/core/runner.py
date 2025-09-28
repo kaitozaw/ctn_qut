@@ -1,4 +1,5 @@
 import twooter.sdk as twooter
+from collections import deque
 from openai import OpenAI
 from queue import Queue
 from typing import Any, Dict, List, Set
@@ -8,7 +9,7 @@ import threading
 def run_once(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    actions: List[Dict[str, Any]],
+    actions: deque,
     sent_posts: Set[int],
     send_queue: Queue,
     locks: threading.Lock,

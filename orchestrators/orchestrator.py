@@ -53,7 +53,7 @@ def main():
     
     # --- send queue ---
     try:
-        qmax = int(os.getenv("SEND_QUEUE_MAX", "5000"))
+        qmax = int(os.getenv("SEND_QUEUE_MAX", "100"))
     except ValueError:
         qmax = 5000
     send_queue: Queue = Queue(maxsize=qmax)
