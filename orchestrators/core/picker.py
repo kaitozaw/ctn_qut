@@ -48,7 +48,7 @@ def pick_post_from_user(
     posts = pick_posts_from_user(cfg, t, target_username) or []
     if not posts:
         return None
-    goal = random.choice([25, 50, 75, 100])
+    goal = random.choice([100, 200, 300, 400, 500])
     random.shuffle(posts)
     for post in posts:
         reply_count = int(post.get("reply_count", 0))
