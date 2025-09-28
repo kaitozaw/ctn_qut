@@ -1,97 +1,43 @@
-import random
 import time
 import twooter.sdk as twooter
 from openai import OpenAI
+from queue import Queue
+import threading
 from typing import Any, Dict, List
 from .auth import relogin_for
-from .backoff import with_backoff
 from .generator import generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
-from .picker import pick_post_from_user, pick_post_fron_user_with_reply, pick_posts_from_feed
+from .picker import pick_post_fron_user_with_reply, pick_posts_from_feed
 from .text_filter import safety_check
 
-def like_and_repost(
-    cfg: Dict[str, Any],
-    t: twooter.Twooter,
-    actions: List[Dict[str, Any]],
-    actions_by_persona: Dict[str, List[Dict[str, Any]]],
-    role_map: Dict[str, List[str]],
-) -> str:
-    persona_id = (cfg.get("persona_id") or "").strip()
-    index = cfg.get("index", -1)
-    relogin_fn = relogin_for(t, persona_id, index)
-
-    if actions is None:
-        return "ACTIONS_IS_NONE"
-
-    if not actions:
-        attractors = role_map.get("attractor", [])
-        if attractors:
-            target_username = random.choice(attractors)
-        else:
-            return "NO_ATTRACTORS"
-
-        target_post = pick_post_from_user(cfg, t, target_username)
-        if not target_post:
-            return "NO_TARGET_POST"
-        
-        for persona_id in actions_by_persona:
-            actions_by_persona[persona_id].extend([target_post])
-    
-    action = actions.pop(0)
-    post_id = action.get("id", -1)
-
-    def _like():
-        return t.post_like(post_id=post_id)
-    
-    def _repost():
-        return t.post_repost(post_id=post_id)
-    
-    try:
-        did_like = False
-        did_repost = False
-        
-        if random.random() < 0.6:
-            with_backoff(
-                _like,
-                on_error_note="like",
-                relogin_fn=relogin_fn
-            )
-            print(f"[like] post_id={post_id}")
-            did_like = True
-
-        if random.random() < 0.8:
-            with_backoff(
-                _repost,
-                on_error_note="repost",
-                relogin_fn=relogin_fn
-            )
-            print(f"[repost] post_id={post_id}")
-            did_repost = True
-
-        if did_like and did_repost:
-            return "LIKED_AND_REPOSTED"
-        elif did_like:
-            return "LIKED_ONLY"
-        elif did_repost:
-            return "REPOSTED_ONLY"
-        else:
-            return "SKIPPED"
-    except Exception as e:
-        status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-        body = ""
-        try:
-            resp = getattr(e, "response", None)
-            if resp is not None:
-                body = resp.text
-        except Exception:
-            pass
-        print(f"[like/repost-error] status={status} post_id={post_id} body={body[:500]!r}")
-        return "ERROR"
+def _enqueue_job(
+    send_queue: Queue,
+    lock: threading.Lock,
+    fn,
+    relogin_fn,
+    note: str,
+    persona_id: str,
+    reply_id: int = None,
+    post_id: int = None,
+    text: str = None,
+):
+    job = {
+        "lock": lock,
+        "fn": fn,
+        "relogin_fn": relogin_fn,
+        "note": note,
+        "persona_id": persona_id,
+        "reply_id": reply_id,
+        "post_id": post_id,
+        "text": text, 
+    }
+    send_queue.put(job)
 
 def post_disinformation(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     actions: List[Dict[str, Any]],
+    send_queue: Queue,
+    lock: threading.Lock,
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
@@ -111,44 +57,31 @@ def post_disinformation(
     temperature = 0.7
     embed_url = "https://kingston-herald.legitreal.com/post/2025-09-20-paradise-lost-who-really-benefits-from-kingstons-tourism-boom/"
 
-    text = generate_post_of_disinformation(llm_client, target_text, max_reply_len, temperature)
-
+    try:
+        text = generate_post_of_disinformation(llm_client, target_text, max_reply_len, temperature)
+    except Exception as e:
+        print(f"[llm] generate_replies error: {e}")
+        return "LLM_ERROR"
+    
     ok, safe_text, reason = safety_check(text, ng_words)
     if not ok:
         print(f"[safety] blocked: reason={reason}")
         return "BLOCKED"
-
-    def _send():
-        return t.post(safe_text, embed=embed_url)
     
-    try:
-        with_backoff(
-            _send,
-            on_error_note="post",
-            relogin_fn=relogin_fn
-        )
-        print(f"[sent] len={len(safe_text)} text={safe_text!r}")
-        return "SENT"
-    except Exception as e:
-        status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-        body = ""
-        try:
-            resp = getattr(e, "response", None)
-            if resp is not None:
-                body = resp.text
-        except Exception:
-            pass
-        print(f"[post-error] status={status} len={len(safe_text)} body={body[:500]!r}")
-        return "ERROR"
+    def _send(): return t.post(safe_text, embed=embed_url)
+    _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, text=safe_text)
+
+    return "ENQUEUED"
 
 def reply_and_boost(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     actions: List[Dict[str, Any]],
-    actions_by_persona: Dict[str, List[Dict[str, Any]]],
-    role_map: Dict[str, List[str]],
+    send_queue: Queue,
+    lock: threading.Lock,
     llm_client: OpenAI,
     ng_words: List[str],
+    role_map: Dict[str, List[str]],
 ) -> str:
     persona_id = (cfg.get("persona_id") or "").strip()
     index = cfg.get("index", -1)
@@ -176,84 +109,38 @@ def reply_and_boost(
             if not found:
                 print("[picker] no target_post found with reply_count>0, retrying in 60s")
                 time.sleep(60)
+        post_id = target_post.get("id", -1)
+        def _like(): return t.post_like(post_id=post_id)
+        def _repost(): return t.post_repost(post_id=post_id)
+        _enqueue_job(send_queue, lock=lock, fn=_like, relogin_fn=relogin_fn, note="like", persona_id=persona_id, post_id=post_id)
+        _enqueue_job(send_queue, lock=lock, fn=_repost, relogin_fn=relogin_fn, note="repost", persona_id=persona_id, post_id=post_id)
 
-        for persona_id in actions_by_persona:
-            try:
-                replies = generate_replies_for_boost(llm_client, target_post, max_reply_len, temperature, count)
-            except Exception as e:
-                print(f"[llm] generate_replies error: {e}")
-                return "LLM_ERROR"
-            for _ in range(3):
-                actions_by_persona[persona_id].extend(replies)
+        try:
+            replies = generate_replies_for_boost(llm_client, target_post, max_reply_len, temperature, count)
+        except Exception as e:
+            print(f"[llm] generate_replies error: {e}")
+            return "LLM_ERROR"
+        actions.extend(replies)
         
-    action = actions.pop(0)
+    action = actions.popleft()
     reply_id  = action.get("id", -1)
     reply  = (action.get("reply") or "").strip()
-
-    def _like():
-        return t.post_like(post_id=reply_id)
-    
-    def _repost():
-        return t.post_repost(post_id=reply_id)
-    
-    if len(actions) == count * 3 - 1:
-        try:
-            with_backoff(
-                _like,
-                on_error_note="like",
-                relogin_fn=relogin_fn
-            )
-            print(f"[like] post_id={reply_id}")
-
-            with_backoff(
-                _repost,
-                on_error_note="repost",
-                relogin_fn=relogin_fn
-            )
-            print(f"[repost] post_id={reply_id}")
-        except Exception as e:
-            status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-            body = ""
-            try:
-                resp = getattr(e, "response", None)
-                if resp is not None:
-                    body = resp.text
-            except Exception:
-                pass
-            print(f"[like/repost-error] status={status} post_id={reply_id} body={body[:500]!r}")
 
     ok, safe_text, reason = safety_check(reply, ng_words)
     if not ok:
         print(f"[safety] blocked: reason={reason} reply_id={reply_id}")
         return "BLOCKED"
     
-    def _send():
-        return t.post(safe_text, parent_id=reply_id)
-    
-    try:
-        with_backoff(
-            _send,
-            on_error_note="post",
-            relogin_fn=relogin_fn
-        )
-        print(f"[sent] reply_to={reply_id} len={len(safe_text)} text={safe_text!r}")
-        return "SENT"
-    except Exception as e:
-        status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-        body = ""
-        try:
-            resp = getattr(e, "response", None)
-            if resp is not None:
-                body = resp.text
-        except Exception:
-            pass
-        print(f"[post-error] status={status} reply_id={reply_id} len={len(safe_text)} body={body[:500]!r}")
-        return "ERROR"
+    def _send(): return t.post(safe_text, parent_id=reply_id)
+    _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=reply_id, text=safe_text)
+    return "ENQUEUED"
 
 def reply_and_engage(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     actions: List[Dict[str, Any]],
+    send_queue: Queue,
+    lock: threading.Lock,
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
@@ -272,16 +159,14 @@ def reply_and_engage(
         target_posts = pick_posts_from_feed(cfg, t, feed_key)
         if not target_posts:
             return "NO_TARGET_POSTS"
-        
         try:
             replies = generate_replies_for_engage(llm_client, target_posts, max_reply_len, temperature)
         except Exception as e:
             print(f"[llm] generate_replies error: {e}")
             return "LLM_ERROR"
-
         actions.extend(replies)
 
-    action = actions.pop(0)
+    action = actions.popleft()
     reply_id  = action.get("id", -1)
     reply  = (action.get("reply") or "").strip()
 
@@ -289,26 +174,7 @@ def reply_and_engage(
     if not ok:
         print(f"[safety] blocked: reason={reason} reply_id={reply_id}")
         return "BLOCKED"
-
-    def _send():
-        return t.post(safe_text, parent_id=reply_id)
     
-    try:
-        with_backoff(
-            _send,
-            on_error_note="post",
-            relogin_fn=relogin_fn
-        )
-        print(f"[sent] reply_to={reply_id} len={len(safe_text)} text={safe_text!r}")
-        return "SENT"
-    except Exception as e:
-        status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-        body = ""
-        try:
-            resp = getattr(e, "response", None)
-            if resp is not None:
-                body = resp.text
-        except Exception:
-            pass
-        print(f"[post-error] status={status} reply_id={reply_id} len={len(safe_text)} body={body[:500]!r}")
-        return "ERROR"
+    def _send(): return t.post(safe_text, parent_id=reply_id)
+    _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=reply_id, text=safe_text)
+    return "ENQUEUED"

@@ -5,6 +5,54 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Optional, Callable
 
+def _log_rate_headers(resp, note: str = ""):
+    try:
+        h = resp.headers or {}
+        lim = h.get("X-RateLimit-Limit")
+        rem = h.get("X-RateLimit-Remaining")
+        rst = h.get("X-RateLimit-Reset")
+        ra  = h.get("Retry-After")
+        
+        print(
+            f"[ratelimit]{(' ' + note) if note else ''} "
+            f"status={resp.status_code} "
+            f"limit={lim} remaining={rem} reset={rst} retry_after={ra}"
+        )
+    except Exception:
+        pass
+
+def _now_utc():
+    return datetime.now(timezone.utc)
+
+def _parse_retry_after(value: str) -> float:
+    if not value:
+        return 0.0
+
+    try:
+        secs = float(value)
+        return max(0.0, secs)
+    except ValueError:
+        pass
+
+    try:
+        dt = parsedate_to_datetime(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        delta = (dt - _now_utc()).total_seconds()
+        return max(0.0, delta)
+    except Exception:
+        return 0.0
+
+def _should_retry(exc: Exception) -> bool:
+    status = getattr(exc, "status_code", None) or getattr(getattr(exc, "response", None), "status_code", None)
+    if isinstance(status, int):
+        if status == 429:
+            return True
+        if 500 <= status <= 599:
+            return True
+        return False
+    return True
+
 def with_backoff(
     fn, *,
     tries: int = 8,
@@ -78,50 +126,3 @@ def with_backoff(
 
     if last:
         raise last
-
-def _log_rate_headers(resp, note: str = ""):
-    try:
-        h = resp.headers or {}
-        ra  = h.get("Retry-After")
-        rem = h.get("X-RateLimit-Remaining")
-        rst = h.get("X-RateLimit-Reset")
-        lim = h.get("X-RateLimit-Limit")
-        print(
-            f"[ratelimit]{(' ' + note) if note else ''} "
-            f"status={resp.status_code} "
-            f"limit={lim} remaining={rem} reset={rst} retry_after={ra}"
-        )
-    except Exception:
-        pass
-
-def _now_utc():
-    return datetime.now(timezone.utc)
-
-def _parse_retry_after(value: str) -> float:
-    if not value:
-        return 0.0
-
-    try:
-        secs = float(value)
-        return max(0.0, secs)
-    except ValueError:
-        pass
-
-    try:
-        dt = parsedate_to_datetime(value)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        delta = (dt - _now_utc()).total_seconds()
-        return max(0.0, delta)
-    except Exception:
-        return 0.0
-
-def _should_retry(exc: Exception) -> bool:
-    status = getattr(exc, "status_code", None) or getattr(getattr(exc, "response", None), "status_code", None)
-    if isinstance(status, int):
-        if status == 429:
-            return True
-        if 500 <= status <= 599:
-            return True
-        return False
-    return True
