@@ -29,7 +29,7 @@ def pick_post_from_user(
     
     return target_post
 
-def pick_post_fron_user_with_reply(
+def pick_post_from_user_with_reply(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     target_username: str,       

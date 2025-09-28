@@ -9,7 +9,7 @@ from orchestrators.core import build_llm_client, ensure_session, filter_cfgs_by_
 from pathlib import Path
 from queue import Queue
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 def main():
     # --- env load ---
@@ -46,9 +46,10 @@ def main():
     # --- round-robin iterator across cfgs ---
     rr = cycle(cfgs)
 
-    # --- session, actions ---
+    # --- session, actions, sent_posts ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
     actions_by_persona: Dict[str, deque] = {}
+    sent_posts_by_persona: Dict[str, Set[int]] = {}
     
     # --- send queue ---
     try:
@@ -155,6 +156,12 @@ def main():
             actions = deque()
             actions_by_persona[persona_id] = actions
 
+         # --- sent_posts ---
+        sent_posts = sent_posts_by_persona.get(persona_id)
+        if sent_posts is None:
+            sent_posts = set()
+            sent_posts_by_persona[persona_id] = sent_posts
+
         # --- lock ---
         lock = lock_by_persona.get(persona_id)
         if lock is None:
@@ -163,7 +170,7 @@ def main():
 
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, actions, send_queue, lock, llm_client, ng_words, role_map)
+            status = run_once(cfg, t, actions, sent_posts, send_queue, lock, llm_client, ng_words, role_map)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")

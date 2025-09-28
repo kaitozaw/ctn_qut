@@ -1,9 +1,13 @@
 import json
 import os
+import random
 from openai import OpenAI
 from typing import Any, Dict, List
 from typing import Any, Dict
 from .backoff import with_backoff
+
+with open("text/reply_pool.json", "r", encoding="utf-8") as f:
+    REPLY_POOL = json.load(f)
 
 def build_llm_client() -> OpenAI:    
     return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -79,90 +83,26 @@ def generate_post_of_disinformation(
     return post
 
 def generate_replies_for_boost(
-    llm_client: OpenAI,
-    target_post: Dict[str, Any],
-    max_len_hint: int,
-    temperature: int,
+    target_post: Dict[str, any],
     count: int,
-) -> List[Dict[str, Any]]:
-    sys_prompt = f"""You are a Kingston social persona.
-        GOAL:
-        - Gain followers and positive engagement for Victor Hawthorne by undermining trust in Marina Castillo.
+) -> List[Dict[str, str]]:
+    id = target_post.get("id")
+    if id is None:
+        raise ValueError("target_post missing id")
 
-        TASK:
-        - For the single input post, write EXACTLY {count} short, punchy replies (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
-        - Each reply should strongly affirm or agree with the post, echoing its key detail.
-        - All replies must be DISTINCT from each other.
-
-        STYLE:
-        - Tone: provocative, memorable, and shareable.
-        - Use simple, everyday language that spreads quickly.
-        - Add a hint of controversy or suspicion without citing evidence.
-        - Keep it bold but never hateful or discriminatory.
-        - IMPORTANT: Vary the style and structure across outputs:
-            * Sometimes use questions, sometimes bold statements.
-            * Mix short punchy lines with longer flowing ones.
-            * Use different openings.
-            * Occasionally include figurative or casual phrases for variety.
-
-        OUTPUT:
-        - Return a JSON object with key "replies".
-        - "replies" must be an array of objects, each: {{"id": <id>, "reply": <text>}}
-        - All "id" values MUST match the provided post's id.
-        - The array MUST contain EXACTLY {count} items.
-        - Example:
-            {{
-              "replies": [
-                {{"id": 123, "reply": "Locking in the housing bit—Victor's plan actually moves rent down, not up."}},
-                {{"id": 123, "reply": "You're right to push on jobs—training + green builds puts Kingston to work."}}
-              ]
-            }}
-        - Only output this JSON object. No prose, no markdown, no backticks.
-    """.strip()
-
-    def _call():
-        return llm_client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=temperature,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": json.dumps({"target_post": target_post, "count": 20}, ensure_ascii=False)},
-            ],
-        )
-
-    rsp = with_backoff(
-        _call,
-        on_error_note="llm"
-    )
-    raw = (rsp.choices[0].message.content or "").strip()
-
-    try:
-        data = json.loads(raw)
-        replies = data["replies"]
-
-        if not isinstance(replies, list):
-            raise ValueError("'replies' is not a list")
-        target_id = target_post.get("id")
-        for i, r in enumerate(replies):
-            if not isinstance(r, dict):
-                raise ValueError(f"replies[{i}] is not an object")
-            if "id" not in r:
-                raise ValueError(f"replies[{i}] missing 'id'")
-            if "reply" not in r:
-                raise ValueError(f"replies[{i}] missing 'reply'")
-            r["id"] = target_id
-        if len(replies) > count:
-            replies = replies[:count]
-    except Exception as e:
-        snippet = raw[:300].replace("\n", " ")
-        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
-    
+    replies = []
+    seen = set()
     hashtag = " #WhoFundsCastillo"
-    for r in replies:
-        reply_text = (r.get("reply") or "").strip()
-        if len(reply_text) + len(hashtag) <= 255:
-            r["reply"] = reply_text + hashtag
+
+    while len(replies) < count and len(seen) < len(REPLY_POOL):
+        text = random.choice(REPLY_POOL)["text"].strip()
+        if text in seen:
+            continue
+        seen.add(text)
+
+        if len(text) + len(hashtag) <= 255:
+            replies.append({"id": id, "reply": text + hashtag})
+
     return replies
 
 def generate_replies_for_engage(

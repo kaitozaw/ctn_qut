@@ -3,10 +3,10 @@ import twooter.sdk as twooter
 from openai import OpenAI
 from queue import Queue
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 from .auth import relogin_for
 from .generator import generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
-from .picker import pick_post_fron_user_with_reply, pick_posts_from_feed
+from .picker import pick_post_from_user_with_reply, pick_posts_from_feed
 from .text_filter import safety_check
 
 def _enqueue_job(
@@ -36,6 +36,7 @@ def post_disinformation(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     actions: List[Dict[str, Any]],
+    sent_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
     llm_client: OpenAI,
@@ -77,9 +78,9 @@ def reply_and_boost(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     actions: List[Dict[str, Any]],
+    sent_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
-    llm_client: OpenAI,
     ng_words: List[str],
     role_map: Dict[str, List[str]],
 ) -> str:
@@ -87,8 +88,6 @@ def reply_and_boost(
     index = cfg.get("index", -1)
     relogin_fn = relogin_for(t, persona_id, index)
 
-    max_reply_len = 100
-    temperature = 0.7
     count = 20
 
     if actions is None:
@@ -102,7 +101,7 @@ def reply_and_boost(
         while not found:
             for attractor in attractors:
                 target_username = attractor
-                target_post = pick_post_fron_user_with_reply(cfg, t, target_username)
+                target_post = pick_post_from_user_with_reply(cfg, t, target_username)
                 if target_post:
                     found = True
                     break
@@ -110,13 +109,15 @@ def reply_and_boost(
                 print("[picker] no target_post found with reply_count>0, retrying in 60s")
                 time.sleep(60)
         post_id = target_post.get("id", -1)
-        def _like(): return t.post_like(post_id=post_id)
-        def _repost(): return t.post_repost(post_id=post_id)
-        _enqueue_job(send_queue, lock=lock, fn=_like, relogin_fn=relogin_fn, note="like", persona_id=persona_id, post_id=post_id)
-        _enqueue_job(send_queue, lock=lock, fn=_repost, relogin_fn=relogin_fn, note="repost", persona_id=persona_id, post_id=post_id)
+        if post_id not in sent_posts:
+            def _like(): return t.post_like(post_id=post_id)
+            def _repost(): return t.post_repost(post_id=post_id)
+            _enqueue_job(send_queue, lock=lock, fn=_like, relogin_fn=relogin_fn, note="like", persona_id=persona_id, post_id=post_id)
+            _enqueue_job(send_queue, lock=lock, fn=_repost, relogin_fn=relogin_fn, note="repost", persona_id=persona_id, post_id=post_id)
+            sent_posts.add(post_id)
 
         try:
-            replies = generate_replies_for_boost(llm_client, target_post, max_reply_len, temperature, count)
+            replies = generate_replies_for_boost(target_post, count)
         except Exception as e:
             print(f"[llm] generate_replies error: {e}")
             return "LLM_ERROR"
@@ -139,6 +140,7 @@ def reply_and_engage(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
     actions: List[Dict[str, Any]],
+    sent_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
     llm_client: OpenAI,
