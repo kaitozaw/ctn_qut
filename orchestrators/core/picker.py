@@ -28,14 +28,15 @@ def pick_post_by_id(
 def pick_post_from_attractors(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    attractors: List[str]
+    attractors: List[str],
+    reply_goal: int,
 ) -> Optional[Dict[str, Any]]:
     if not attractors:
         return None
     shuffled = attractors[:]
     random.shuffle(shuffled)
     for target_username in shuffled:
-        choice = pick_post_from_user(cfg, t, target_username)
+        choice = pick_post_from_user(cfg, t, target_username, reply_goal)
         if choice:
             return choice
     return None
@@ -43,17 +44,17 @@ def pick_post_from_attractors(
 def pick_post_from_user(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    target_username: str
+    target_username: str,
+    reply_goal: int,
 ) -> Optional[Dict[str, Any]]:
     posts = pick_posts_from_user(cfg, t, target_username) or []
     if not posts:
         return None
-    goal = random.choice([100, 200, 300, 400, 500])
     random.shuffle(posts)
     for post in posts:
         reply_count = int(post.get("reply_count", 0))
-        if reply_count < goal:
-            return {"id": int(post["id"]), "reply_goal": goal}
+        if reply_count < reply_goal:
+            return {"id": int(post["id"])}
     return None
 
 def pick_posts_from_user(

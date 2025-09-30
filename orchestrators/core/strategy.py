@@ -49,27 +49,28 @@ def pick_post(
         return "NO_ATTRACTORS"
 
     cur = read_current()
+    reply_goal = 1000
 
     if not cur:
-        choice = pick_post_from_attractors(cfg, t, attractors)
+        choice = pick_post_from_attractors(cfg, t, attractors, reply_goal)
         if not choice:
             return "NO_CANDIDATE"
-        write_current_and_history(choice["id"], choice["reply_goal"])
+        write_current_and_history(choice["id"], reply_goal)
         return "SET NEW POST"
 
     post_id = cur.get("post_id")
-    reply_goal = cur.get("reply_goal")
-    if not isinstance(post_id, int) or not isinstance(reply_goal, int):
+    goal = cur.get("reply_goal")
+    if not isinstance(post_id, int) or not isinstance(goal, int):
         return "INVALID_CURRENT_JSON"
 
     post = pick_post_by_id(cfg, t, post_id) or {}
-    reply_count = int(post.get("reply_count", 0))
+    count = int(post.get("reply_count", 0))
 
-    if reply_count >= reply_goal:
-        choice = pick_post_from_attractors(cfg, t, attractors)
+    if count >= goal:
+        choice = pick_post_from_attractors(cfg, t, attractors, reply_goal)
         if not choice:
             return "NO_CANDIDATE"
-        write_current_and_history(choice["id"], choice["reply_goal"])
+        write_current_and_history(choice["id"], reply_goal)
         return "SET NEW POST"
 
     return "CONTINUE CURRENT POST"
