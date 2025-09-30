@@ -3,9 +3,6 @@ import boto3
 from botocore.config import Config
 from typing import Optional, Dict, Any, Tuple
 
-def _iso_utc_now() -> str:
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
 def _get_s3_and_cfg() -> Tuple[any, str, str, str]:
     region = os.getenv("AWS_REGION") or "ap-southeast-2"
     bucket = os.getenv("AWS_S3_BUCKET")
@@ -13,6 +10,9 @@ def _get_s3_and_cfg() -> Tuple[any, str, str, str]:
     history_prefix = os.getenv("PICKER_HISTORY_PREFIX", "picker/history/")
     s3 = boto3.client("s3", region_name=region, config=Config(retries={"max_attempts": 5, "mode": "standard"}))
     return s3, bucket, current_key, history_prefix
+
+def _iso_utc_now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 def read_current() -> Optional[Dict[str, Any]]:
     s3, bucket, current_key, _ = _get_s3_and_cfg()

@@ -3,6 +3,19 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
+def _parse_env_allows():
+    roles_allow = {r.casefold() for r in _split_csv(os.getenv("BOT_ROLE_ALLOW", ""))}
+    idx_allow: List[int] = []
+    for x in _split_csv(os.getenv("BOT_INDEX_ALLOW", "")):
+        try:
+            idx_allow.append(int(x))
+        except ValueError:
+            pass
+    return roles_allow, set(idx_allow)
+
+def _split_csv(val: str) -> List[str]:
+    return [x.strip() for x in (val or "").split(",") if x.strip()]
+
 def filter_cfgs_by_env(cfgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     roles_allow, indexes_allow = _parse_env_allows()
 
@@ -50,16 +63,3 @@ def load_ng(ng_path: str) -> List[str]:
             continue
         words.append(s.casefold())
     return words
-
-def _split_csv(val: str) -> List[str]:
-    return [x.strip() for x in (val or "").split(",") if x.strip()]
-
-def _parse_env_allows():
-    roles_allow = {r.casefold() for r in _split_csv(os.getenv("BOT_ROLE_ALLOW", ""))}
-    idx_allow: List[int] = []
-    for x in _split_csv(os.getenv("BOT_INDEX_ALLOW", "")):
-        try:
-            idx_allow.append(int(x))
-        except ValueError:
-            pass
-    return roles_allow, set(idx_allow)
