@@ -1,6 +1,4 @@
 {
     "persona_id": "nathan.clark",
-    "role": "picker",
-    "index": 5,
-    "strategy": "pick_post"
+    "index": 5
 }

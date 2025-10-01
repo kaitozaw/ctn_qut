@@ -1,11 +1,11 @@
 from .auth import ensure_session, relogin_for, SkipPersona, whoami_username
 from .backoff import with_backoff
 from .bootstrap import filter_cfgs_by_env, load_cfg, load_ng
-from .generator import build_llm_client, generate_post_of_disinformation, generate_replies_for_boost, generate_replies_for_engage
-from .picker import  pick_post_by_id, pick_post_from_attractors, pick_post_from_user, pick_posts_from_user, pick_posts_from_feed
-from .picker_s3 import read_current, write_current_and_history
+from .generator import build_llm_client, generate_post, generate_reply_for_boost
+from .picker import  pick_post_by_id, pick_post_from_notification, pick_posts_from_user, pick_posts_from_feed
+from .picker_s3 import get_random_article, read_current, write_current_and_history
 from .runner import run_once
-from .strategy import pick_post, post_disinformation, reply_and_boost, reply_and_engage
+from .strategy import attract, boost
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -13,11 +13,11 @@ __all__ = [
     "ensure_session", "relogin_for", "SkipPersona", "whoami_username",
     "with_backoff",
     "filter_cfgs_by_env", "load_cfg", "load_ng",
-    "build_llm_client", "generate_post_of_disinformation", "generate_replies_for_boost", "generate_replies_for_engage",
-    "pick_post_by_id", "pick_post_from_attractors", "pick_post_from_user", "pick_posts_from_user", "pick_posts_from_feed",
-    "read_current", "write_current_and_history"
+    "build_llm_client", "generate_post", "generate_reply_for_boost",
+    "pick_post_by_id", "pick_post_from_notification", "pick_posts_from_user", "pick_posts_from_feed",
+    "get_random_article", "read_current", "write_current_and_history"
     "run_once",
-    "pick_post", "post_disinformation", "reply_and_boost", "reply_and_engage",
+    "attract", "boost",
     "safety_check",
     "extract_post_fields",
 ]

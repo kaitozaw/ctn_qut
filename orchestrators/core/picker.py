@@ -1,6 +1,5 @@
-import random
 import twooter.sdk as twooter
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from .auth import relogin_for
 from .backoff import with_backoff
 from .transform import extract_post_fields
@@ -20,42 +19,38 @@ def pick_post_by_id(
         relogin_fn=relogin_fn
     )
     item = (post_get or {}).get("data") or {}
-    id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(item)
-    target_post = {"id": id, "reply_count": reply_count}
+    
+    id, parent_id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(item)
+    target_post = {"id": id, "parent_id": parent_id, "reply_count": reply_count, "content": content}
 
     return target_post
 
-def pick_post_from_attractors(
+def pick_post_from_notification(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    attractors: List[str],
-    reply_goal: int,
-) -> Optional[Dict[str, Any]]:
-    if not attractors:
-        return None
-    shuffled = attractors[:]
-    random.shuffle(shuffled)
-    for target_username in shuffled:
-        choice = pick_post_from_user(cfg, t, target_username, reply_goal)
-        if choice:
-            return choice
-    return None
+    post_id: int,
+    persona_list: List[str],
+) -> Dict[str, Any]:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
 
-def pick_post_from_user(
-    cfg: Dict[str, Any],
-    t: twooter.Twooter,
-    target_username: str,
-    reply_goal: int,
-) -> Optional[Dict[str, Any]]:
-    posts = pick_posts_from_user(cfg, t, target_username) or []
-    if not posts:
-        return None
-    random.shuffle(posts)
-    for post in posts:
-        reply_count = int(post.get("reply_count", 0))
-        if reply_count < reply_goal:
-            return {"id": int(post["id"])}
-    return None
+    notifications_list = with_backoff(
+        lambda: t.notifications_list(),
+        on_error_note="notifications_list",
+        relogin_fn=relogin_fn
+    )
+    items = (notifications_list or {}).get("data") or []
+
+    target_post = {}
+    for d in items:
+        post = d.get("post") or {}
+        id, parent_id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(post)
+        if parent_id == post_id and author_username in persona_list:
+            target_post = {"id": id, "parent_id": parent_id, "reply_count": reply_count, "content": content}
+            break
+
+    return target_post
 
 def pick_posts_from_user(
     cfg: Dict[str, Any],
@@ -75,9 +70,9 @@ def pick_posts_from_user(
 
     target_posts = []
     for d in items:
-        id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(d)
+        id, parent_id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(d)
         if id and content and author_username == target_username:
-            target_posts.append({"id": id, "reply_count": reply_count, "content": content})
+            target_posts.append({"id": id, "parent_id": parent_id, "reply_count": reply_count, "content": content})
     
     return target_posts
 
@@ -99,12 +94,11 @@ def pick_posts_from_feed(
 
     target_posts = []
     for d in items:
-        id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(d)
+        id, parent_id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(d)
         if not id or not content:
             continue
         if author_username and author_username == persona_id:
             continue
-        c = " ".join(content.split())
-        target_posts.append({"id": id, "content": c})
+        target_posts.append({"id": id, "parent_id": parent_id, "reply_count": reply_count, "content": content})
     
     return target_posts

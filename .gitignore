@@ -4,5 +4,6 @@ venv/
 *.db
 .vscode/
 .env
+articles.json
 config.json
 tests/

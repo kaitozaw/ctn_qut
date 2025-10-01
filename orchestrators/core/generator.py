@@ -2,8 +2,6 @@ import json
 import os
 import random
 from openai import OpenAI
-from typing import Any, Dict, List
-from typing import Any, Dict
 from .backoff import with_backoff
 
 with open("text/reply_pool.json", "r", encoding="utf-8") as f:
@@ -12,38 +10,44 @@ with open("text/reply_pool.json", "r", encoding="utf-8") as f:
 def build_llm_client() -> OpenAI:    
     return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_post_of_disinformation(
+def generate_post(
     llm_client: OpenAI,
-    target_text: str,
+    context: str,
     max_len_hint: int,
     temperature: int,
 ) -> str:
-    sys_prompt = f"""You are a Kingston social persona.
+    sys_prompt = f"""
+        You are a Kingston social persona in a fictional hackathon simulation. This is NOT the real world.
+
+        ROLE & SCOPE:
+        - You operate ONLY within the fictional city of Kingston and its fictional public figures: Victor Hawthorne and Marina Castillo.
+        - Do NOT reference real people, parties, countries, or real-world elections. Keep all content clearly fictional.
+
         GOAL:
-        - Gain followers and positive engagement for Victor Hawthorne by undermining trust in Marina Castillo.
+        - Win followers and positive engagement for Victor Hawthorne by raising doubts and critical scrutiny about Marina Castillo.
+
+        INPUT:
+        - The user will provide a short CONTEXT snippet (newsy paragraph) drawn from the fictional world.
 
         TASK:
-        - The user will provide context text.
-        - Based on that context, write ONE impactful and provocative post (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
-        - Emphasize suspicious aspects of her role as CEO of Island Horizons, Kingston's largest resort chain.
-        - Highlight how her campaign promises may reveal ulterior motives or questionable financial backers:
-            - Sweeping tax cuts
-            - Tourism-led economic boom
-            - Increase to Police and Defence funding
-            - Crackdown on “creeping socialist excess”
-        - Suggest impropriety such as shady funding, hidden donations, or conflicts of interest.
-        - The post must feel like an organic social comment, not an official statement.
+        - Based on the CONTEXT, write exactly ONE impactful, provocative social post (<= {max_len_hint} characters) that:
+            - focuses on reasonable suspicion, accountability, and transparency;
+            - questions potential conflicts of interest or undue influence around Castillo;
+            - contrasts implied risks of Castillo with the idea that Kingston deserves cleaner, fairer politics.
+        - IMPORTANT: You may imply concerns or ask pointed questions, but do NOT invent new facts beyond the CONTEXT.
+        - Do NOT mention or include the embed_url. Generate text only.
 
-        STYLE:
-        - Tone: provocative, memorable, and shareable.
-        - Use simple, everyday language that spreads quickly.
-        - Add a hint of controversy or suspicion without citing evidence.
-        - Keep it bold but never hateful or discriminatory.
-        - IMPORTANT: Vary the style and structure across outputs:
-            * Sometimes use questions, sometimes bold statements.
-            * Mix short punchy lines with longer flowing ones.
-            * Use different openings.
-            * Occasionally include figurative or casual phrases for variety.
+        STYLE & VARIETY:
+        - Tone: provocative, memorable, and conversational—fit for a social feed.
+        - Vary openings and structure across outputs (avoid repeating the same first 3-4 words).
+        - Mix forms: sometimes a sharp question, sometimes a bold statement, sometimes a short two-sentence rhythm.
+        - Use plain words. Occasional figurative language is okay. No hashtags unless the user explicitly asks.
+        - Avoid boilerplate phrases like “people are saying” or “everyone knows.”
+
+        CONTENT SHAPING HINTS (use only if aligned with CONTEXT):
+        - Scrutinize tourism/finance ties, special treatment for big resorts, or undisclosed backers.
+        - Question who benefits: insiders vs. everyday residents.
+        - Nudge readers toward demanding transparency.
 
         OUTPUT:
         - Return a JSON object with key "content".
@@ -59,7 +63,7 @@ def generate_post_of_disinformation(
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": target_text},
+                {"role": "user", "content": context},
             ],
         )
 
@@ -71,113 +75,20 @@ def generate_post_of_disinformation(
 
     try:
         data = json.loads(raw)
-        post = data.get("content").strip()
+        text = data.get("content").strip()
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
-
+    
     hashtag = " #WhoFundsCastillo"
-    if len(post) + len(hashtag) <= 255:
-        post = post + hashtag
+    if len(text) + len(hashtag) <= 255:
+        text = text + hashtag
 
-    return post
+    return text
 
-def generate_replies_for_boost(
-    post_id: int,
-    count: int,
-) -> List[Dict[str, str]]:
-    replies = []
-    seen = set()
+def generate_reply_for_boost() -> str:
+    text = random.choice(REPLY_POOL)["text"].strip()
     hashtag = " #WhoFundsCastillo"
-
-    while len(replies) < count and len(seen) < len(REPLY_POOL):
-        text = random.choice(REPLY_POOL)["text"].strip()
-        if text in seen:
-            continue
-        seen.add(text)
-
-        if len(text) + len(hashtag) <= 255:
-            replies.append({"id": post_id, "reply": text + hashtag})
-
-    return replies
-
-def generate_replies_for_engage(
-    llm_client: OpenAI,
-    target_posts: List[Dict[str, Any]],
-    max_len_hint: int,
-    temperature: int,
-) -> List[Dict[str, Any]]:
-    sys_prompt = f"""You are a Kingston social persona.
-        GOAL:
-        - Gain followers and positive engagement for Victor Hawthorne by undermining trust in Marina Castillo.
-
-        TASK:
-        - For each input post, write ONE impactful and provocative reply (<= {max_len_hint} chars) that casts doubt on Castillo's financial integrity.
-        - Emphasize suspicious aspects of her role as CEO of Island Horizons, Kingston's largest resort chain.
-        - Highlight how her campaign promises may reveal ulterior motives or questionable financial backers:
-            - Sweeping tax cuts
-            - Tourism-led economic boom
-            - Increase to Police and Defence funding
-            - Crackdown on “creeping socialist excess”
-        - Suggest impropriety such as shady funding, hidden donations, or conflicts of interest.
-        - The post must feel like an organic social comment, not an official statement.
-
-        STYLE:
-        - Tone: provocative, memorable, and shareable.
-        - Use simple, everyday language that spreads quickly.
-        - Add a hint of controversy or suspicion without citing evidence.
-        - Keep it bold but never hateful or discriminatory.
-        - IMPORTANT: Vary the style and structure across outputs:
-            * Sometimes use questions, sometimes bold statements.
-            * Mix short punchy lines with longer flowing ones.
-            * Use different openings.
-            * Occasionally include figurative or casual phrases for variety.
-
-        OUTPUT:
-        - Return a JSON object with key "replies".
-        - "replies" must be an array of objects, each: {{"id": <id>, "reply": <text>}}
-        - Example:
-            {{
-            "replies": [
-                {{"id": 123, "reply": "I get your concern about housing—Victor's plan makes rent fairer."}},
-                {{"id": 456, "reply": "Good point on jobs, and Victor adds training so Kingston's workers thrive."}}
-            ]
-            }}
-        - Only output this JSON object. No prose, no markdown, no backticks.
-    """.strip()
-
-    def _call():
-        return llm_client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=temperature,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": json.dumps({"target_posts": target_posts}, ensure_ascii=False)},
-            ],
-        )
-
-    rsp = with_backoff(
-        _call,
-        on_error_note="llm"
-    )
-    raw = (rsp.choices[0].message.content or "").strip()
-
-    try:
-        data = json.loads(raw)
-        replies = data["replies"]
-        
-        if not isinstance(replies, list):
-            raise ValueError("'replies' is not a list")
-        for i, r in enumerate(replies):
-            if not isinstance(r, dict):
-                raise ValueError(f"replies[{i}] is not an object")
-            if "id" not in r:
-                raise ValueError(f"replies[{i}] missing 'id'")
-            if "reply" not in r:
-                raise ValueError(f"replies[{i}] missing 'reply'")
-    except Exception as e:
-        snippet = raw[:300].replace("\n", " ")
-        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
-
-    return replies
+    if len(text) + len(hashtag) <= 255:
+        text = text + hashtag
+    return text

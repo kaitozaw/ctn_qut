@@ -4,27 +4,21 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 def _parse_env_allows():
-    roles_allow = {r.casefold() for r in _split_csv(os.getenv("BOT_ROLE_ALLOW", ""))}
     idx_allow: List[int] = []
     for x in _split_csv(os.getenv("BOT_INDEX_ALLOW", "")):
         try:
             idx_allow.append(int(x))
         except ValueError:
             pass
-    return roles_allow, set(idx_allow)
+    return set(idx_allow)
 
 def _split_csv(val: str) -> List[str]:
     return [x.strip() for x in (val or "").split(",") if x.strip()]
 
 def filter_cfgs_by_env(cfgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    roles_allow, indexes_allow = _parse_env_allows()
+    indexes_allow = _parse_env_allows()
 
     def allowed(c: Dict[str, Any]) -> bool:
-        if roles_allow:
-            role = str(c.get("role", "")).casefold()
-            if role not in roles_allow:
-                return False
-
         if indexes_allow:
             try:
                 idx = int(c.get("index"))
@@ -37,11 +31,7 @@ def filter_cfgs_by_env(cfgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     selected = [c for c in cfgs if allowed(c)]
     personas = ", ".join(str(c.get("persona_id", "?")) for c in selected) or "(none)"
-    print(
-        f"[select] roles_allow={sorted(roles_allow) or '(any)'} "
-        f"indexes_allow={sorted(indexes_allow) or '(any)'} "
-        f"personas={personas}"
-    )
+    print(f"[select] indexes_allow={sorted(indexes_allow) or '(any)'} personas={personas}")
 
     return selected
 

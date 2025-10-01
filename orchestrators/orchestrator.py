@@ -1,14 +1,13 @@
 import os
 import random
+import threading
 import time
 import twooter.sdk as twooter
-from collections import deque
 from dotenv import load_dotenv
 from itertools import cycle
 from orchestrators.core import build_llm_client, ensure_session, filter_cfgs_by_env, load_cfg, load_ng, run_once, SkipPersona, whoami_username, with_backoff
 from pathlib import Path
 from queue import Queue
-import threading
 from typing import Any, Dict, List, Set
 
 def main():
@@ -31,31 +30,31 @@ def main():
     if not cfgs:
         raise RuntimeError("No valid bot configs could be loaded.")
     
-    # --- build role -> persona_id mapping for orchestration (before env-based filtering) ---
-    role_map: Dict[str, List[str]] = {}
+    # --- strategy ---
+    strategy = os.getenv("BOT_STRATEGY", "booster")
+
+    # --- build persona_id list for orchestration (before env-based filtering) ---
+    persona_list: List[str] = []
     for cfg in cfgs:
-        role = (cfg.get("role") or "").strip()
         persona_id = (cfg.get("persona_id") or "").strip()
-        if not role or not persona_id:
-            continue
-        role_map.setdefault(role, []).append(persona_id)
+        persona_list.append(persona_id)
+    
+    # --- LLM client ---
+    llm_client = build_llm_client()
 
-    # --- env-based filtering (role/index)
-    cfgs = filter_cfgs_by_env(cfgs)
-
-    # --- round-robin iterator across cfgs ---
-    rr = cycle(cfgs)
+    # --- NG list ---
+    ng_path = "policies/ng_words.txt"
+    ng_words = load_ng(ng_path)
 
     # --- session, actions, sent_posts ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
-    actions_by_persona: Dict[str, deque] = {}
     sent_posts_by_persona: Dict[str, Set[int]] = {}
-    
+
     # --- send queue ---
     try:
         qmax = int(os.getenv("SEND_QUEUE_MAX", "100"))
     except ValueError:
-        qmax = 5000
+        qmax = 100
     send_queue: Queue = Queue(maxsize=qmax)
 
     # --- lock ---
@@ -89,7 +88,7 @@ def main():
                     f"{f' post_id={post_id}' if post_id else ''}"
                     f"{f' text={text!r}' if text else ''}"
                 )
-                min_gap = max(0.0, int(os.getenv("MIN_INTERVAL_MS", "400")) / 1000.0)
+                min_gap = max(0.0, int(os.getenv("MIN_INTERVAL_MS", "1000")) / 1000.0)
                 time.sleep(min_gap)
             except Exception as e:
                 print(
@@ -110,26 +109,13 @@ def main():
     for i in range(workers_n):
         th = threading.Thread(target=_worker, args=(f"w{i}",), daemon=True)
         th.start()
+
+    # --- env-based filtering (role/index)
+    cfgs = filter_cfgs_by_env(cfgs)
+
+    # --- round-robin iterator across cfgs ---
+    rr = cycle(cfgs)
     
-    # --- LLM client ---
-    llm_client = build_llm_client()
-
-    # --- NG list ---
-    ng_path = "policies/ng_words.txt"
-    ng_words = load_ng(ng_path)
-
-    # --- load sleep configuration from environment ---
-    busy_sleep = max(0.01, int(os.getenv("BUSY_SLEEP_MS", "100")) / 1000.0)
-
-    try:
-        base = int(os.getenv("BASE", "120"))
-    except ValueError:
-        base = 120
-    try:
-        jitter = int(os.getenv("JITTER", "60"))
-    except ValueError:
-        jitter = 60
-
     # --- main loop ---
     while True:
         cfg = next(rr)
@@ -150,13 +136,7 @@ def main():
                 continue 
             session_by_persona[persona_id] = t
 
-        # --- actions ---
-        actions = actions_by_persona.get(persona_id)
-        if actions is None:
-            actions = deque()
-            actions_by_persona[persona_id] = actions
-
-         # --- sent_posts ---
+        # --- sent_posts ---
         sent_posts = sent_posts_by_persona.get(persona_id)
         if sent_posts is None:
             sent_posts = set()
@@ -170,18 +150,21 @@ def main():
 
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, actions, sent_posts, send_queue, lock, llm_client, ng_words, role_map)
+            status = run_once(cfg, t, strategy, persona_list, llm_client, ng_words, sent_posts, send_queue, lock)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep ---
-        if actions or not send_queue.empty():
+        if strategy == "boost":
+            busy_sleep = 5
             time.sleep(busy_sleep)
         else:
-            slp = base + random.randint(-jitter, jitter)
-            print(f"[loop] persona={persona_id} status={status} sleep={slp}s")
-            time.sleep(slp)
+            base = 120
+            jitter = 60
+            sleep = base + random.randint(-jitter, jitter)
+            print(f"[loop] persona={persona_id} status={status} sleep={sleep}s")
+            time.sleep(sleep)
 
 if __name__ == "__main__":
     main()
