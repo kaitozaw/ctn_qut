@@ -76,7 +76,7 @@ def attract(
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
-    GOAL = 500
+    GOAL = 1000
     cur = read_current()
 
     if not cur:
