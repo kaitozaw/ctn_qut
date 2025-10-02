@@ -88,14 +88,14 @@ def generate_post(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
-    hashtag = " #FirstDebate2025"
+    hashtag = " #FirstDebate2025 #WhoFundsCastillo"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag
     return text
 
 def generate_reply_for_boost() -> str:
     text = random.choice(REPLY_POOL)["text"].strip()
-    hashtag = " #FirstDebate2025"
+    hashtag = " #FirstDebate2025 #WhoFundsCastillo"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag
     return text

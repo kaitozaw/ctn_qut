@@ -42,7 +42,7 @@ def _generate_and_send_post(
     article = get_random_article()
     embed_url = (article or {}).get("embed_url", "")
     context = (article or {}).get("context", "")
-    max_reply_len = 220
+    max_reply_len = 200
     temperature = 0.7
     
     try:
@@ -76,7 +76,7 @@ def attract(
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
-    GOAL = 100
+    GOAL = 10
     cur = read_current()
 
     if not cur:
