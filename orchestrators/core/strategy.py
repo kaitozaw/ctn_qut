@@ -1,3 +1,4 @@
+import random
 import threading
 import twooter.sdk as twooter
 from openai import OpenAI
@@ -10,6 +11,9 @@ from .picker import pick_post_by_id, pick_post_from_notification
 from .picker_s3 import get_random_article, read_current, write_current_and_history
 from .text_filter import safety_check
 from .transform import extract_post_fields
+
+def _choose_goal() -> int:
+    return random.choices([100, 500, 1000], weights=[0.6, 0.3, 0.1], k=1)[0]
 
 def _enqueue_job(
     send_queue: Queue,
@@ -76,14 +80,14 @@ def attract(
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
-    GOAL = 1000
     cur = read_current()
 
     if not cur:
         target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
         if not target_post:
             return "NO_TARGET_POST"
-        write_current_and_history(target_post["id"], GOAL)
+        new_goal = _choose_goal()
+        write_current_and_history(target_post["id"], new_goal)
         return "SET NEW POST"
     
     post_id = cur.get("post_id")
@@ -103,7 +107,8 @@ def attract(
             target_post = pick_post_from_notification(cfg, t, post_id, persona_list)
             if not target_post:
                 return "NO_TARGET_POST"
-        write_current_and_history(target_post["id"], GOAL)
+        new_goal = _choose_goal()
+        write_current_and_history(target_post["id"], new_goal)
         return "SET NEW POST"
     
     return "CONTINUE CURRENT POST"
