@@ -3,9 +3,8 @@ venv/
 *.pyc
 *.db
 .vscode/
+picker/
 tests/
 .env
-articles.json
-current.json
 config.json
 voters.txt
