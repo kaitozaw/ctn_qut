@@ -70,7 +70,7 @@ def main():
             fn = job["fn"]
             relogin_fn = job.get("relogin_fn")
             note = job.get("note", "")
-            persona = job.get("persona_id")
+            persona_id = job.get("persona_id")
             reply_id = job.get("reply_id")
             post_id = job.get("post_id")
             text = job.get("text")
@@ -83,7 +83,7 @@ def main():
                     with_backoff(fn, on_error_note=note, relogin_fn=relogin_fn)
                 print(
                     f"[sent]{(' ' + note) if note else ''}"
-                    f" persona={persona}"
+                    f" persona={persona_id}"
                     f"{f' reply_id={reply_id}' if reply_id else ''}"
                     f"{f' post_id={post_id}' if post_id else ''}"
                     f"{f' text={text!r}' if text else ''}"
@@ -93,7 +93,7 @@ def main():
             except Exception as e:
                 print(
                     f"[post-error]{(' ' + note) if note else ''}"
-                    f" persona={persona}"
+                    f" persona={persona_id}"
                     f"{f' reply_id={reply_id}' if reply_id else ''}"
                     f"{f' post_id={post_id}' if post_id else ''}" 
                     f"{e.__class__.__name__}: {e}"

@@ -3,12 +3,12 @@ import threading
 import twooter.sdk as twooter
 from openai import OpenAI
 from queue import Full, Queue
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_post, generate_reply_for_boost
+from .generator import generate_post_dilemma, generate_post_empathy, generate_reply_for_boost
 from .picker import pick_post_by_id, pick_post_from_notification
-from .picker_s3 import get_random_article, read_current, write_current_and_history
+from .picker_s3 import get_random_article, get_random_story, read_current, write_current_and_history
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -38,22 +38,63 @@ def _generate_and_send_post(
     t: twooter.Twooter,
     llm_client: OpenAI,
     ng_words: List[str],
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
+    
+    generated_post = _generate_post(cfg, llm_client) 
+    if not generated_post or not generated_post.get("text"):
+        return None
+    
+    text = generated_post["text"]
+    embed_url = generated_post.get("embed_url") or None
+
+    sent_post = _send_post(cfg, t, ng_words, text, embed_url)
+    if not sent_post:
+        return None
+
+    return sent_post
+
+def _generate_post(
+    cfg: Dict[str, Any],
+    llm_client: OpenAI,
+) -> Optional[Dict[str, str]]:
+    story_type = (cfg.get("story_type") or "").strip()
+
+    if story_type == "dilemma":
+        article = get_random_article()
+        embed_url = (article or {}).get("embed_url", "")
+        context = (article or {}).get("context", "")
+        max_reply_len = 200
+        temperature = 0.7
+        try:
+            text = generate_post_dilemma(llm_client, context, max_reply_len, temperature)
+            return {"text": text, "embed_url": embed_url or ""}
+        except Exception as e:
+            print(f"[llm] generate_post error: {e}")
+            return None
+    elif story_type == "empathy":
+        story = get_random_story()
+        context = (story or {}).get("context", "")
+        max_reply_len = 200
+        temperature = 0.7
+        try:
+            text = generate_post_empathy(llm_client, context, max_reply_len, temperature)
+            return {"text": text}
+        except Exception as e:
+            print(f"[llm] generate_post error: {e}")
+            return None
+    else:
+        return None
+
+def _send_post(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    ng_words: List[str],
+    text: str,
+    embed_url: str = "",
+) -> Optional[Dict[str, Any]]:
     persona_id = (cfg.get("persona_id") or "").strip()
     index = cfg.get("index", -1)
     relogin_fn = relogin_for(t, persona_id, index)
-
-    article = get_random_article()
-    embed_url = (article or {}).get("embed_url", "")
-    context = (article or {}).get("context", "")
-    max_reply_len = 200
-    temperature = 0.7
-    
-    try:
-        text = generate_post(llm_client, context, max_reply_len, temperature)
-    except Exception as e:
-        print(f"[llm] generate_replies error: {e}")
-        return None
 
     ok, safe_text, reason = safety_check(text, ng_words)
     if not ok:
@@ -65,13 +106,14 @@ def _generate_and_send_post(
         on_error_note="post_create",
         relogin_fn=relogin_fn
     )
-
     item = (post_create or {}).get("data") or {}
     id, parent_id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(item)
-    print(f"[sent] persona={persona_id} post_id={id} text={content!r}")
-    post = {"id": id}
+    if not id:
+        print(f"[post-error] failed to get post_id")
+        return None
 
-    return post
+    print(f"[sent] persona={persona_id} post_id={id} text={content!r}")
+    return {"id": id}
 
 def attract(
     cfg: Dict[str, Any],
@@ -80,6 +122,7 @@ def attract(
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
+    current_persona = (cfg.get("persona_id") or "").strip()
     cur = read_current()
 
     if not cur:
@@ -87,28 +130,35 @@ def attract(
         if not target_post:
             return "NO_TARGET_POST"
         new_goal = _choose_goal()
-        write_current_and_history(target_post["id"], new_goal)
+        write_current_and_history(target_post["id"], current_persona, new_goal)
         return "SET NEW POST"
     
     post_id = cur.get("post_id")
+    persona_id = cur.get("persona_id")
     reply_goal = cur.get("reply_goal")
-    if not isinstance(post_id, int) or not isinstance(reply_goal, int):
+    if not isinstance(post_id, int) or not isinstance(persona_id, str) or not isinstance(reply_goal, int):
         return "INVALID_CURRENT_JSON"
+    
     post = pick_post_by_id(cfg, t, post_id) or {}
     reply_count = post.get("reply_count", 0)
+    parent_id = post.get("parent_id", 0)
 
     if reply_count >= reply_goal:
-        parent_id = post.get("parent_id", 0)
-        if parent_id:
+        if current_persona == persona_id:
+            if parent_id:
+                target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
+                if not target_post:
+                    return "NO_TARGET_POST"
+            else:
+                target_post = pick_post_from_notification(cfg, t, post_id, persona_list)
+                if not target_post:
+                    return "NO_TARGET_POST"
+        else:
             target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
             if not target_post:
-                return "NO_TARGET_POST"
-        else:
-            target_post = pick_post_from_notification(cfg, t, post_id, persona_list)
-            if not target_post:
-                return "NO_TARGET_POST"
+                    return "NO_TARGET_POST"
         new_goal = _choose_goal()
-        write_current_and_history(target_post["id"], new_goal)
+        write_current_and_history(target_post["id"], current_persona, new_goal)
         return "SET NEW POST"
     
     return "CONTINUE CURRENT POST"

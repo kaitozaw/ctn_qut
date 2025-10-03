@@ -9,14 +9,15 @@ def _get_s3_and_cfg() -> Tuple[any, str, str, str]:
     articles_key = os.getenv("PICKER_ARTICLES_KEY", "picker/articles.json")
     current_key = os.getenv("PICKER_CURRENT_KEY", "picker/current.json")
     history_prefix = os.getenv("PICKER_HISTORY_PREFIX", "picker/history/")
+    stories_key = os.getenv("PICKER_STORIES_KEY", "picker/stories.json")
     s3 = boto3.client("s3", region_name=region, config=Config(retries={"max_attempts": 5, "mode": "standard"}))
-    return s3, bucket, articles_key, current_key, history_prefix
+    return s3, bucket, articles_key, current_key, history_prefix, stories_key
 
 def _iso_utc_now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 def _read_articles_array() -> Optional[List[Dict[str, str]]]:
-    s3, bucket, articles_key, _, _ = _get_s3_and_cfg()
+    s3, bucket, articles_key, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=articles_key)
@@ -35,21 +36,48 @@ def _read_articles_array() -> Optional[List[Dict[str, str]]]:
     for d in data:
         if isinstance(d, dict) and d.get("embed_url") and d.get("context"):
             articles.append(d)
-
     return articles
 
+def _read_stories_array() -> Optional[List[Dict[str, str]]]:
+    s3, bucket, _, _, _, stories_key = _get_s3_and_cfg()
+    assert bucket, "AWS_S3_BUCKET is required"
+    try:
+        obj = s3.get_object(Bucket=bucket, Key=stories_key)
+        data = json.loads(obj["Body"].read().decode("utf-8"))
+    except s3.exceptions.NoSuchKey:
+        return None
+    except Exception as e:
+        print(f"[s3] read_stories error: {e.__class__.__name__}: {e}")
+        return None
+
+    if not isinstance(data, list):
+        print(f"[json] expected top-level array at s3://{bucket}/{stories_key}")
+        return None
+
+    stories = []
+    for d in data:
+        if isinstance(d, dict) and d.get("context"):
+            stories.append(d)
+    return stories
+
 def get_random_article() -> Optional[Dict[str, Any]]:
-    _, _, articles_key, _, _ = _get_s3_and_cfg()
     articles = _read_articles_array()
     if not articles:
         return None
-
     index = random.randrange(len(articles))
     article = articles[index]
     return {"embed_url": article["embed_url"], "context": article["context"]}
 
+def get_random_story() -> Optional[Dict[str, Any]]:
+    stories = _read_stories_array()
+    if not stories:
+        return None
+    index = random.randrange(len(stories))
+    story = stories[index]
+    return {"context": story["context"]}
+
 def read_current() -> Optional[Dict[str, Any]]:
-    s3, bucket, _, current_key, _ = _get_s3_and_cfg()
+    s3, bucket, _, current_key, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=current_key)
@@ -60,12 +88,13 @@ def read_current() -> Optional[Dict[str, Any]]:
         print(f"[s3] read_current error: {e.__class__.__name__}: {e}")
         return None
 
-def write_current_and_history(post_id: int, reply_goal: int, extra: Optional[Dict[str, Any]] = None) -> str:
-    s3, bucket, _, current_key, history_prefix = _get_s3_and_cfg()
+def write_current_and_history(post_id: int, persona_id: str, reply_goal: int, extra: Optional[Dict[str, Any]] = None) -> str:
+    s3, bucket, _, current_key, history_prefix, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
     payload = {
         "post_id": int(post_id),
+        "persona_id": str(persona_id),
         "reply_goal": int(reply_goal),
         "issued_at": _iso_utc_now(),
     }
