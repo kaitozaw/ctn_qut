@@ -32,12 +32,6 @@ def main():
     
     # --- strategy ---
     strategy = os.getenv("BOT_STRATEGY", "booster")
-
-    # --- build persona_id list for orchestration (before env-based filtering) ---
-    persona_list: List[str] = []
-    for cfg in cfgs:
-        persona_id = (cfg.get("persona_id") or "").strip()
-        persona_list.append(persona_id)
     
     # --- LLM client ---
     llm_client = build_llm_client()
@@ -150,7 +144,7 @@ def main():
 
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, strategy, persona_list, llm_client, ng_words, sent_posts, send_queue, lock)
+            status = run_once(cfg, t, strategy, llm_client, ng_words, sent_posts, send_queue, lock)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")

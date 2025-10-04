@@ -1,3 +1,4 @@
+import json
 import random
 import threading
 import twooter.sdk as twooter
@@ -6,14 +7,27 @@ from queue import Full, Queue
 from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_post_dilemma, generate_post_empathy, generate_reply_for_boost
-from .picker import pick_post_by_id, pick_post_from_notification
-from .picker_s3 import get_random_article, get_random_story, read_current, write_current_and_history
+from .generator import generate_post_article, generate_post_story, generate_reply_for_boost
+from .picker import pick_post_by_id
+from .picker_s3 import get_random_article, get_story_histories, read_current, write_current_and_history, write_story_histories
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
 def _choose_goal() -> int:
-    return random.choices([100, 500, 1000], weights=[0.6, 0.3, 0.1], k=1)[0]
+    return random.choices([500, 1000], weights=[0.8, 0.2], k=1)[0]
+
+def _decide_story_phase(story_histories: Dict[str, List[str]]) -> str:
+    if not isinstance(story_histories, dict):
+        return "Frustration Rising"
+
+    phases_order = ["Frustration Rising", "Contrast Building", "Accountability Demand", "Decision Push"]
+    for phase in phases_order:
+        texts = story_histories.get(phase, [])
+        if not isinstance(texts, list):
+            texts = []
+        if len(texts) < 10:
+            return phase
+    return "Decision Push"
 
 def _enqueue_job(
     send_queue: Queue,
@@ -57,27 +71,60 @@ def _generate_post(
     cfg: Dict[str, Any],
     llm_client: OpenAI,
 ) -> Optional[Dict[str, str]]:
-    story_type = (cfg.get("story_type") or "").strip()
+    persona_id = (cfg.get("persona_id") or "").strip()
+    content_type = (cfg.get("content_type") or "").strip()
 
-    if story_type == "dilemma":
+    if content_type == "article":
         article = get_random_article()
         embed_url = (article or {}).get("embed_url", "")
-        context = (article or {}).get("context", "")
+        article_content = (article or {}).get("article_content", "")
+
+        context = f"""
+            ARTICLE_CONTENT:
+            {article_content}
+        """
         max_reply_len = 200
         temperature = 0.7
         try:
-            text = generate_post_dilemma(llm_client, context, max_reply_len, temperature)
+            text = generate_post_article(llm_client, context, max_reply_len, temperature)
+            hashtag = " #TideTurning"
+            if len(text) + len(hashtag) <= 255:
+                text = text + hashtag
             return {"text": text, "embed_url": embed_url or ""}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
-    elif story_type == "empathy":
-        story = get_random_story()
-        context = (story or {}).get("context", "")
+
+    elif content_type == "story":
+        story_seed = (cfg.get("story_seed") or "").strip()
+        story_histories = get_story_histories(persona_id)
+        story_phase = _decide_story_phase(story_histories)
+        recent_histories = {phase: (texts[-3:] if isinstance(texts, list) else []) for phase, texts in (story_histories or {}).items()}
+        temp_by_phase = {
+            "Frustration Rising": 0.8,
+            "Contrast Building": 0.6,
+            "Accountability Demand": 0.55,
+            "Decision Push": 0.45
+        }
+
+        context = f"""
+            STORY_SEED:
+            {story_seed}
+
+            STORY_HISTORIES (phase-wise, recent last):
+            {json.dumps(recent_histories, ensure_ascii=False, indent=2)}
+
+            STORY_PHASE: 
+            {story_phase}
+        """
         max_reply_len = 200
-        temperature = 0.7
+        temperature = temp_by_phase.get(story_phase, 0.7)
         try:
-            text = generate_post_empathy(llm_client, context, max_reply_len, temperature)
+            text = generate_post_story(llm_client, context, max_reply_len, temperature)
+            write_story_histories(persona_id, story_phase, text)
+            hashtag = " #TideTurning"
+            if len(text) + len(hashtag) <= 255:
+                text = text + hashtag
             return {"text": text}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
@@ -118,7 +165,6 @@ def _send_post(
 def attract(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
-    persona_list: List[str],
     llm_client: OpenAI,
     ng_words: List[str],
 ) -> str:
@@ -134,29 +180,17 @@ def attract(
         return "SET NEW POST"
     
     post_id = cur.get("post_id")
-    persona_id = cur.get("persona_id")
     reply_goal = cur.get("reply_goal")
-    if not isinstance(post_id, int) or not isinstance(persona_id, str) or not isinstance(reply_goal, int):
+    if not isinstance(post_id, int) or not isinstance(reply_goal, int):
         return "INVALID_CURRENT_JSON"
     
     post = pick_post_by_id(cfg, t, post_id) or {}
     reply_count = post.get("reply_count", 0)
-    parent_id = post.get("parent_id", 0)
 
     if reply_count >= reply_goal:
-        if current_persona == persona_id:
-            if parent_id:
-                target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
-                if not target_post:
-                    return "NO_TARGET_POST"
-            else:
-                target_post = pick_post_from_notification(cfg, t, post_id, persona_list)
-                if not target_post:
-                    return "NO_TARGET_POST"
-        else:
-            target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
-            if not target_post:
-                    return "NO_TARGET_POST"
+        target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
+        if not target_post:
+            return "NO_TARGET_POST"
         new_goal = _choose_goal()
         write_current_and_history(target_post["id"], current_persona, new_goal)
         return "SET NEW POST"
@@ -204,6 +238,10 @@ def boost(
         sent_posts.add(post_id)
     
     text = generate_reply_for_boost()
+    hashtag = " #TideTurning"
+    if len(text) + len(hashtag) <= 255:
+        text = text + hashtag
+
     def _send(): return t.post(text, parent_id=post_id)
     enq = _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=post_id, text=text)
     if not enq:

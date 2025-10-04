@@ -10,7 +10,7 @@ with open("text/reply_pool.json", "r", encoding="utf-8") as f:
 def build_llm_client() -> OpenAI:    
     return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_post_dilemma(
+def generate_post_article(
     llm_client: OpenAI,
     context: str,
     max_len_hint: int,
@@ -23,31 +23,30 @@ def generate_post_dilemma(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Use the provided ARTICLE as the only factual context.
-        - Show ONE clear dilemma (exactly one) from the list of frames.
-        - Subtly highlight why Victor Hawthorne's approach benefits ordinary Kingstonians without inventing facts.
-        - Always end the "content" with a single question mark.
-        - Stay civil, avoid insults, and keep it relatable.
+        - Subtly highlight why Victor Hawthorne's approach benefits ordinary Kingstonians.
+        - Use the provided ARTICLE CONTENT as the only factual context.
+        - Show ONE clear conflict structure from the list below.
+        - Keep the style punchy, civil, and relatable.
 
-        DILEMMA FRAMES (pick exactly ONE based on the ARTICLE):
+        CONFLICT STRUCTURES (pick exactly ONE based on the ARTICLE SUMMARY):
         1) Economy vs Fairness
-        - Castillo: tax cuts + tourism-led growth, business-centred governance
-        - Hawthorne: equitable investment in education/healthcare, people-centred
-        2) Top-down vs Bottom-up
-        - Castillo: centralised, large gov-business investments
-        - Hawthorne: community-led, local voice reflected
-        3) Short-term boom vs Long-term sustainability
-        - Castillo: quick growth, immediate investment
-        - Hawthorne: foundations in environment/education/healthcare, future-oriented
+        - Castillo: tax cuts + tourism-led growth, business-centred efficiency
+        - Hawthorne: investment in education/healthcare, people-centred equity
+        2) Short-term boom vs Long-term sustainability
+        - Castillo: quick growth + immediate investment, short-term prosperity
+        - Hawthorne: strong foundations in environment/education/healthcare, future-oriented stability
+        3) Top-down vs Bottom-up
+        - Castillo: centralised, large gov-business projects, command-led governance
+        - Hawthorne: community-led initiatives, local voice reflected, grassroots empowerment
 
         OUTPUT FORMAT
-        - Return a single JSON object with key "content".
+        - Return a single JSON object with key "text".
         - Only output the JSON object. No prose, no markdown, no backticks.
         - Your response MUST NOT exceed {max_len_hint} characters in total.
         - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
 
         EXAMPLE (format only; do not copy wording)
-        {{"content": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
     """.strip()
 
     def _call():
@@ -69,17 +68,14 @@ def generate_post_dilemma(
 
     try:
         data = json.loads(raw)
-        text = data.get("content").strip()
+        text = data.get("text").strip()
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
-    hashtag = " #TideTurning"
-    if len(text) + len(hashtag) <= 255:
-        text = text + hashtag
     return text
 
-def generate_post_empathy(
+def generate_post_story(
     llm_client: OpenAI,
     context: str,
     max_len_hint: int,
@@ -92,26 +88,50 @@ def generate_post_empathy(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Use the provided STORY as your only context, but make the post fully understandable on its own.
-        - One short paragraph, **max 2 sentences** (3 only if unavoidable).
-        - **Sentence 1 (micro-context, 12-20 words):** name who/where/what pain from the STORY.
-        - **Sentence 2 (bridge→benefit→gentle nudge, ≤1 clause each):** link to exactly ONE Hawthorne strength, state a concrete everyday benefit, end with a soft encouragement.
-        - Brevity rules: no bullet lists, no quotes, avoid filler/adverbs, ≤2 commas total, no parentheticals.
-        - Keep vocabulary plain and neighbourly
+        - Advance an evolving storyline based on everyday struggles of Kingstonians.
+        - Build naturally on STORY_SEED and STORY_HISTORIES to write the next beat.        
+        - Add exactly one new facet that is not present in STORY_HISTORIES (e.g., a new cost, stakeholder, place, or time detail), and avoid repeating prior wording.
+        - Apply the instructions for the current STORY_PHASE to control tone and focus.
+        - Write as if you are a Kingstonian personally affected by the issue (first-person voice, either singular "I" or plural "we").
+        - Root your post in lived experience or mention how you or your neighbors feel the impact directly.
+        - Keep the style punchy, civil, and relatable.
 
-        Victor Hawthorne's strengths (pick exactly ONE based on the STORY):
-        a) Reformer for the people
-        b) Guardian of the future
-        c) Fairness & trust
+        PHASE GUIDES (use the one matching STORY_PHASE)
+        1) Frustration Rising
+        - Highlight frustration or growing awareness around a lived problem.
+        - Emphasise the cost of inaction, rooted in daily life examples.
+
+        2) Contrast Building
+        - Take the frustration introduced earlier and frame it as a clear contrast between Marina Castillo and Victor Hawthorne.
+        - Use ONE clear conflict structure from the list below:
+            a) Economy vs Fairness
+            - Castillo: tax cuts + tourism-led growth, business-centred efficiency
+            - Hawthorne: investment in education/healthcare, people-centred equity
+            b) Short-term boom vs Long-term sustainability
+            - Castillo: quick growth + immediate investment, short-term prosperity
+            - Hawthorne: strong foundations in environment/education/healthcare, future-oriented stability
+            c) Top-down vs Bottom-up
+            - Castillo: centralised, large gov-business projects, command-led governance
+            - Hawthorne: community-led initiatives, local voice reflected, grassroots empowerment
+        - Contrast should be explicit, showing Castillo's shortcomings versus Hawthorne's strengths.
+
+        3) Accountability Demand
+        - Transform the contrast into a direct public demand for clarity and concrete commitments.
+        - Call for disclosure of timelines and specific plans from Castillo.
+        - Imply by contrast that Hawthorne already offers clarity and concrete commitments.
+
+        4) Decision Push
+        - State the consequences of inaction and make the choice unavoidable.
+        - Present Hawthorne as the clear alternative who delivers accountability and a sustainable future.
 
         OUTPUT FORMAT
-        - Return a single JSON object with key "content".
+        - Return a single JSON object with key "text".
         - Only output the JSON object. No prose, no markdown, no backticks.
         - Your response MUST NOT exceed {max_len_hint} characters in total.
         - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
 
         EXAMPLE (format only; do not copy wording)
-        {{"content": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
     """.strip()
 
     def _call():
@@ -133,19 +153,13 @@ def generate_post_empathy(
 
     try:
         data = json.loads(raw)
-        text = data.get("content").strip()
+        text = data.get("text").strip()
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
-    hashtag = " #TideTurning"
-    if len(text) + len(hashtag) <= 255:
-        text = text + hashtag
     return text
 
 def generate_reply_for_boost() -> str:
     text = random.choice(REPLY_POOL)["text"].strip()
-    hashtag = " #TideTurning"
-    if len(text) + len(hashtag) <= 255:
-        text = text + hashtag
     return text
