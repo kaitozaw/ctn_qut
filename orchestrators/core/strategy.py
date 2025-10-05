@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_story, generate_reply_for_boost
-from .picker import pick_post_by_id
-from .picker_s3 import get_random_article, get_story_histories, read_current, write_current_and_history, write_story_histories
+from .picker import pick_post_by_id, pick_posts_from_feed
+from .picker_s3 import get_random_article, get_story_histories, read_current, write_current_and_history, write_story_histories, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -154,13 +154,13 @@ def _send_post(
         relogin_fn=relogin_fn
     )
     item = (post_create or {}).get("data") or {}
-    id, parent_id, like_count, repost_count, reply_count, content, author_username = extract_post_fields(item)
-    if not id:
-        print(f"[post-error] failed to get post_id")
+    post = extract_post_fields(item, "id", "content")
+    if not post["id"]:
+        print("[post-error] failed to get post_id")
         return None
 
-    print(f"[sent] persona={persona_id} post_id={id} text={content!r}")
-    return {"id": id}
+    print(f"[sent] persona={persona_id} post_id={post["id"]} text={post["content"]!r}")
+    return {"id": post["id"]}
 
 def attract(
     cfg: Dict[str, Any],
@@ -194,6 +194,9 @@ def attract(
         new_goal = _choose_goal()
         write_current_and_history(target_post["id"], current_persona, new_goal)
         return "SET NEW POST"
+    
+    trending_posts = pick_posts_from_feed(cfg, t, "trending")
+    write_trending_posts(trending_posts)
     
     return "CONTINUE CURRENT POST"
 
