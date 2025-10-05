@@ -159,7 +159,7 @@ def _send_post(
         print("[post-error] failed to get post_id")
         return None
 
-    print(f"[sent] persona={persona_id} post_id={post["id"]} text={post["content"]!r}")
+    print(f"[sent] persona={persona_id} post_id={post['id']} text={post['content']!r}")
     return {"id": post["id"]}
 
 def attract(
