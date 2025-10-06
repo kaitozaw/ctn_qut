@@ -24,11 +24,11 @@ def generate_post_article(
 
         ROLE
         - Subtly highlight why Victor Hawthorne's approach benefits ordinary Kingstonians.
-        - Use the provided ARTICLE CONTENT as the only factual context.
-        - Show ONE clear conflict structure from the list below.
+        - Base your reasoning on the ARTICLE CONTENT.
+        - When reasoning, draw from the contrasts in CONFLICT STRUCTURES below.
         - Keep the style punchy, civil, and relatable.
 
-        CONFLICT STRUCTURES (pick exactly ONE based on the ARTICLE SUMMARY):
+        CONFLICT STRUCTURES:
         1) Economy vs Fairness
         - Castillo: tax cuts + tourism-led growth, business-centred efficiency
         - Hawthorne: investment in education/healthcare, people-centred equity
@@ -73,6 +73,75 @@ def generate_post_article(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
+    return text
+
+def generate_post_reply(
+    llm_client: OpenAI,
+    context: str,
+    max_len_hint: int,
+    temperature: int,
+) -> str:
+    sys_prompt = f"""
+        You are a Kingston social persona in a fictional hackathon simulation (NOT the real world).
+
+        OBJECTIVE
+        - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
+
+        ROLE
+        - Strengthen engagement and positive sentiment toward Victor Hawthorne through thoughtful, conversational reply.
+        - Acknowledge the REPLY_CONTEXT respectfully, then pivot toward a constructive or hopeful point.
+        - When forming that pivot, draw from the contrasts in CONFLICT STRUCTURES below.
+        - Keep the style punchy, civil, and relatable.
+
+        CONFLICT STRUCTURES:
+        1) Economy vs Fairness
+        - Castillo: tax cuts + tourism-led growth, business-centred efficiency
+        - Hawthorne: investment in education/healthcare, people-centred equity
+        2) Short-term boom vs Long-term sustainability
+        - Castillo: quick growth + immediate investment, short-term prosperity
+        - Hawthorne: strong foundations in environment/education/healthcare, future-oriented stability
+        3) Top-down vs Bottom-up
+        - Castillo: centralised, large gov-business projects, command-led governance
+        - Hawthorne: community-led initiatives, local voice reflected, grassroots empowerment
+
+        OUTPUT FORMAT
+        - Return a single JSON object with key "text".
+        - Only output the JSON object. No prose, no markdown, no backticks.
+        - Your response MUST NOT exceed {max_len_hint} characters in total.
+        - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
+
+        EXAMPLE (format only; do not copy wording)
+        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+    """.strip()
+
+    def _call():
+        return llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": context},
+            ],
+        )
+
+    rsp = with_backoff(
+        _call,
+        on_error_note="llm"
+    )
+    raw = (rsp.choices[0].message.content or "").strip()
+
+    try:
+        data = json.loads(raw)
+        text = data.get("text").strip()
+    except Exception as e:
+        snippet = raw[:300].replace("\n", " ")
+        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
+    
+    return text
+
+def generate_post_reply_for_boost() -> str:
+    text = random.choice(REPLY_POOL)["text"].strip()
     return text
 
 def generate_post_story(
@@ -158,8 +227,4 @@ def generate_post_story(
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
-    return text
-
-def generate_reply_for_boost() -> str:
-    text = random.choice(REPLY_POOL)["text"].strip()
     return text

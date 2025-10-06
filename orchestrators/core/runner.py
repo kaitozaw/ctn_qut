@@ -11,15 +11,15 @@ def run_once(
     strategy: str,
     llm_client: OpenAI,
     ng_words: List[str],
-    sent_posts: Set[int],
+    replied_posts: Set[int],
     send_queue: Queue,
     lock: threading.Lock,
 ) -> str:
     if strategy == "attract":
-        result = attract(cfg, t, llm_client, ng_words)
+        result = attract(cfg, t, llm_client, ng_words, replied_posts)
         return result
     elif strategy == "boost":
-        result = boost(cfg, t, sent_posts, send_queue, lock)
+        result = boost(cfg, t, replied_posts, send_queue, lock)
         return result
     else:
         return "NO_STRATEGY"

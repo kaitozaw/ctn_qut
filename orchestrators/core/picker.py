@@ -23,28 +23,6 @@ def pick_post_by_id(
     target_post = extract_post_fields(item)
     return target_post
 
-def pick_posts_from_user(
-    cfg: Dict[str, Any],
-    t: twooter.Twooter,
-    target_username: str,
-) -> List[Dict[str, Any]]:
-    persona_id = (cfg.get("persona_id") or "").strip()
-    index = cfg.get("index", -1)
-    relogin_fn = relogin_for(t, persona_id, index)
-
-    user_activity = with_backoff(
-        lambda: t.user_activity(target_username),
-        on_error_note="user_activity",
-        relogin_fn=relogin_fn
-    )
-    items = (user_activity or {}).get("data") or []
-
-    target_posts = []
-    for d in items:
-        target_post = extract_post_fields(d)
-        target_posts.append(target_post)
-    return target_posts
-
 def pick_posts_from_feed(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
@@ -60,6 +38,50 @@ def pick_posts_from_feed(
         relogin_fn=relogin_fn
     )
     items = (feed or {}).get("data") or []
+
+    target_posts = []
+    for d in items:
+        target_post = extract_post_fields(d)
+        target_posts.append(target_post)
+    return target_posts
+
+def pick_posts_from_notification(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+) -> List[Dict[str, Any]]:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    notifications_list = with_backoff(
+        lambda: t.notifications_list(),
+        on_error_note="notifications_list",
+        relogin_fn=relogin_fn
+    )
+    items = (notifications_list or {}).get("data") or []
+
+    target_posts = []
+    for d in items:
+        post = d.get("post") or {}
+        target_post = extract_post_fields(post)
+        target_posts.append(target_post)
+    return target_posts
+
+def pick_posts_from_user(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    target_username: str,
+) -> List[Dict[str, Any]]:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    user_activity = with_backoff(
+        lambda: t.user_activity(target_username),
+        on_error_note="user_activity",
+        relogin_fn=relogin_fn
+    )
+    items = (user_activity or {}).get("data") or []
 
     target_posts = []
     for d in items:

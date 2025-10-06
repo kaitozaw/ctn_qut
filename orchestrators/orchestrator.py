@@ -42,7 +42,7 @@ def main():
 
     # --- session, actions, sent_posts ---
     session_by_persona: Dict[str, twooter.Twooter] = {}
-    sent_posts_by_persona: Dict[str, Set[int]] = {}
+    replied_posts_by_persona: Dict[str, Set[int]] = {}
 
     # --- send queue ---
     try:
@@ -131,10 +131,10 @@ def main():
             session_by_persona[persona_id] = t
 
         # --- sent_posts ---
-        sent_posts = sent_posts_by_persona.get(persona_id)
-        if sent_posts is None:
-            sent_posts = set()
-            sent_posts_by_persona[persona_id] = sent_posts
+        replied_posts = replied_posts_by_persona.get(persona_id)
+        if  replied_posts is None:
+            replied_posts = set()
+            replied_posts_by_persona[persona_id] =  replied_posts
 
         # --- lock ---
         lock = lock_by_persona.get(persona_id)
@@ -144,7 +144,7 @@ def main():
 
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, strategy, llm_client, ng_words, sent_posts, send_queue, lock)
+            status = run_once(cfg, t, strategy, llm_client, ng_words,  replied_posts, send_queue, lock)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
