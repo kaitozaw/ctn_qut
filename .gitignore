@@ -3,7 +3,9 @@ venv/
 *.pyc
 *.db
 .vscode/
+analysis/
 picker/
 tests/
 .env
 config.json
+ctn_qut.duckdb
