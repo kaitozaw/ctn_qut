@@ -246,11 +246,13 @@ def attract(
             target_post = replies.pop(0)
         else: 
             target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
-            if not target_post:
-                return "NO_TARGET_POST"
+            write_dialogues(persona_id, target_post)
+
+        if not target_post:
+            return "NO_TARGET_POST"
+        
         new_goal = _choose_goal()
         write_current_and_history(persona_id, target_post, new_goal)
-        write_dialogues(persona_id, target_post)
         return "SET NEW POST"
     
     return "CONTINUE CURRENT POST"
