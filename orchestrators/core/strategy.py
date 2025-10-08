@@ -107,9 +107,6 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_reply(llm_client, context, max_reply_len, temperature)
-            hashtag = " #TideTurning"
-            if len(text) + len(hashtag) <= 255:
-                text = text + hashtag
             return {"text": text, "parent_id": parent_id or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
@@ -129,7 +126,7 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)
-            hashtag = " #TideTurning"
+            hashtag = " #SecondDebate2025"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "embed_url": embed_url or None}
@@ -165,7 +162,7 @@ def _generate_post(
         try:
             text = generate_post_story(llm_client, context, max_reply_len, temperature)
             write_story_histories(persona_id, story_phase, text)
-            hashtag = " #TideTurning"
+            hashtag = " #SecondDebate2025"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text}
