@@ -297,7 +297,7 @@ def boost(
         replied_posts.add(current_post_id)
     
     text = generate_post_reply_for_boost()
-    hashtag = " #TideTurning"
+    hashtag = " #SecondDebate2025"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag
 
