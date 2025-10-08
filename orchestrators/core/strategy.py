@@ -10,7 +10,7 @@ from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_reply, generate_post_reply_for_boost, generate_post_story
 from .picker import pick_post_by_id, pick_posts_from_feed, pick_posts_from_notification
-from .picker_s3 import get_random_article, get_story_histories, read_current, write_current_and_history, write_story_histories, write_trending_posts
+from .picker_s3 import get_random_article, get_dialogue, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -48,13 +48,13 @@ def _enqueue_job(
     except Full:
         return False
 
-def _filter_notification_posts_from_npcs(
-    notification_posts: List[Dict[str, Any]],
-):
+def _filter_posts_by_verified(
+    posts: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     filtered_posts = []
-    for post in notification_posts:
-        author_id = (post or {}).get("author_id")
-        if isinstance(author_id, int) and author_id <= 800:
+    for post in posts:
+        author_verified = bool((post or {}).get("author_verified"))
+        if author_verified:
             filtered_posts.append(post)
     return filtered_posts
 
@@ -63,9 +63,9 @@ def _generate_and_send_post(
     t: twooter.Twooter,
     llm_client: OpenAI,
     ng_words: List[str],
-    parent_post: Optional[Dict[str, Any]] = None,
+    post: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    generated_post = _generate_post(cfg, llm_client, parent_post) 
+    generated_post = _generate_post(cfg, llm_client, post) 
     if not generated_post or not generated_post.get("text"):
         return None
     
@@ -82,19 +82,28 @@ def _generate_and_send_post(
 def _generate_post(
     cfg: Dict[str, Any],
     llm_client: OpenAI,
-    parent_post: Optional[Dict[str, Any]] = None,
+    post: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, str]]:
-    if parent_post:
-        parent_id = parent_post.get("id")
-        author = parent_post.get("author_username")
-        content = parent_post.get("content")
+    if post:
+        persona_id = (cfg.get("persona_id") or "").strip()
+        parent_id = post.get("id")
+        dialogue = get_dialogue(persona_id, post) or []
+        dialogue_lines = []
+        for d in dialogue:
+            if not isinstance(d, dict):
+                continue
+            author = d.get("author_username", "unknown")
+            content = d.get("content", "").strip()
+            dialogue_lines.append(f"{author}: {content}")
+        dialogue_text = "\n".join(dialogue_lines)
 
         context = f"""
-            REPLY_CONTEXT:
-            From: {author}
-            Message: {content}
+            DIALOGUE:
+            {dialogue_text}
+
+            You are replying as: {persona_id}
         """
-        max_reply_len = 100
+        max_reply_len = 200
         temperature = 0.7
         try:
             text = generate_post_reply(llm_client, context, max_reply_len, temperature)
@@ -206,10 +215,10 @@ def attract(
 ) -> str:
     persona_id = (cfg.get("persona_id") or "").strip()
     cur = read_current()
-    current_post_id = (cur or {}).get("post_id", 0)
     current_persona_id = (cur or {}).get("persona_id", "")
+    current_post_id = (cur or {}).get("post_id", 0)
     current_reply_goal = (cur or {}).get("reply_goal", 0)
-    if not isinstance(current_post_id, int) or not isinstance(current_persona_id, str) or not isinstance(current_reply_goal, int):
+    if not isinstance(current_persona_id, str) or not isinstance(current_post_id, int) or not isinstance(current_reply_goal, int):
         return "INVALID_CURRENT_JSON"
     
     post = pick_post_by_id(cfg, t, current_post_id) if current_post_id else {}
@@ -218,27 +227,30 @@ def attract(
     trending_posts = pick_posts_from_feed(cfg, t, "trending") or []
     write_trending_posts(trending_posts)
 
-    replies_to_npc = []
+    replies = []
     if persona_id != current_persona_id:
         notification_posts = pick_posts_from_notification(cfg, t)
-        notification_posts_from_npc = _filter_notification_posts_from_npcs(notification_posts)
-        for notification_post in notification_posts_from_npc:
+        notification_posts_from_verified = _filter_posts_by_verified(notification_posts)
+        for notification_post in notification_posts_from_verified:
             if notification_post["id"] not in replied_posts:
+                write_dialogues(persona_id, notification_post)
                 reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
                 if reply:
-                    replies_to_npc.append(reply)
+                    write_dialogues(persona_id, reply)
+                    replies.append(reply)
                     replied_posts.add(notification_post["id"])
             time.sleep(5)
 
-    if not cur or not post or reply_count >= current_reply_goal:
-        if replies_to_npc:
-            target_post = replies_to_npc.pop(0)
+    if not cur or not post or replies or reply_count >= current_reply_goal:
+        if replies:
+            target_post = replies.pop(0)
         else: 
             target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
             if not target_post:
                 return "NO_TARGET_POST"
         new_goal = _choose_goal()
-        write_current_and_history(target_post["id"], persona_id, new_goal)
+        write_current_and_history(persona_id, target_post, new_goal)
+        write_dialogues(persona_id, target_post)
         return "SET NEW POST"
     
     return "CONTINUE CURRENT POST"

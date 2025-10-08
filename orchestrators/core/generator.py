@@ -88,21 +88,10 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Strengthen engagement and positive sentiment toward Victor Hawthorne through thoughtful, conversational reply.
-        - Acknowledge the REPLY_CONTEXT respectfully, then pivot toward a constructive or hopeful point.
-        - When forming that pivot, draw from the contrasts in CONFLICT STRUCTURES below.
+        - Keep the reply thread alive and growing by encouraging further responses and follow-ups.
+        - Refer to the DIALOGUE carefully, acknowledging what was said and identifying the most recent question or open idea.
+        - Respond to that question in one sentence, then end your message with a new question or invitation that keeps the conversation going.
         - Keep the style punchy, civil, and relatable.
-
-        CONFLICT STRUCTURES:
-        1) Economy vs Fairness
-        - Castillo: tax cuts + tourism-led growth, business-centred efficiency
-        - Hawthorne: investment in education/healthcare, people-centred equity
-        2) Short-term boom vs Long-term sustainability
-        - Castillo: quick growth + immediate investment, short-term prosperity
-        - Hawthorne: strong foundations in environment/education/healthcare, future-oriented stability
-        3) Top-down vs Bottom-up
-        - Castillo: centralised, large gov-business projects, command-led governance
-        - Hawthorne: community-led initiatives, local voice reflected, grassroots empowerment
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".

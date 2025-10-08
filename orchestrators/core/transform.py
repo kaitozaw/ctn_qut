@@ -15,6 +15,7 @@ def extract_post_fields(d: Dict[str, Any], *fields: str) -> Dict[str, Any]:
         "author_username": (author.get("username") or "").strip(),
         "author_follower_count": _safe_int(author.get("follower_count")),
         "author_following_count": _safe_int(author.get("following_count")),
+        "author_verified": bool(author.get("verified")),
         "like_count": _safe_int(d.get("like_count")),
         "repost_count": _safe_int(d.get("repost_count")),
         "reply_count": _safe_int(d.get("reply_count")),
