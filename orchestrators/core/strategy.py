@@ -15,7 +15,7 @@ from .text_filter import safety_check
 from .transform import extract_post_fields
 
 def _choose_goal() -> int:
-    return random.choices([1500, 2000], weights=[0.8, 0.2], k=1)[0]
+    return random.choices([2500, 3000], weights=[0.8, 0.2], k=1)[0]
 
 def _decide_story_phase(story_histories: Dict[str, List[str]]) -> str:
     if not isinstance(story_histories, dict):
