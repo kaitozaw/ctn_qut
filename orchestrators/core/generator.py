@@ -23,7 +23,7 @@ def generate_post_article(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Ahead of tonight's second debate, encourage support for Victor Hawthorne by highlighting why his approach offers hope and practical solutions for ordinary Kingstonians.
+        - Subtly highlight why Victor Hawthorne's approach benefits ordinary Kingstonians.
         - Base your reasoning on the ARTICLE CONTENT.
         - When reasoning, draw from the contrasts in CONFLICT STRUCTURES below.
         - Keep the style punchy, civil, and relatable.

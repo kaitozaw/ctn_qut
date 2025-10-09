@@ -151,7 +151,7 @@ def main():
 
         # --- sleep ---
         if strategy == "boost":
-            busy_sleep = 5
+            busy_sleep = 2
             time.sleep(busy_sleep)
         else:
             base = 120

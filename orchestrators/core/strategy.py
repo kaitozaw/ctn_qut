@@ -15,7 +15,7 @@ from .text_filter import safety_check
 from .transform import extract_post_fields
 
 def _choose_goal() -> int:
-    return random.choices([500, 1000], weights=[0.8, 0.2], k=1)[0]
+    return random.choices([1500, 2000], weights=[0.8, 0.2], k=1)[0]
 
 def _decide_story_phase(story_histories: Dict[str, List[str]]) -> str:
     if not isinstance(story_histories, dict):
@@ -126,7 +126,7 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)
-            hashtag = " #SecondDebate2025"
+            hashtag = " #TideTurning"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "embed_url": embed_url or None}
@@ -162,7 +162,7 @@ def _generate_post(
         try:
             text = generate_post_story(llm_client, context, max_reply_len, temperature)
             write_story_histories(persona_id, story_phase, text)
-            hashtag = " #SecondDebate2025"
+            hashtag = " #TideTurning"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text}
