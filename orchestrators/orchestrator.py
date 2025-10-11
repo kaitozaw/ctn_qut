@@ -10,6 +10,9 @@ from pathlib import Path
 from queue import Queue
 from typing import Any, Dict, List, Set
 
+_last_send_time = 0.0
+_last_lock = threading.Lock()
+
 def main():
     # --- env load ---
     load_dotenv()
@@ -46,7 +49,7 @@ def main():
 
     # --- send queue ---
     try:
-        qmax = int(os.getenv("SEND_QUEUE_MAX", "100"))
+        qmax = int(os.getenv("SEND_QUEUE_MAX", "10"))
     except ValueError:
         qmax = 100
     send_queue: Queue = Queue(maxsize=qmax)
@@ -56,6 +59,9 @@ def main():
 
     # --- worker function ---
     def _worker(name: str):
+        global _last_send_time
+        min_gap = max(0.0, int(os.getenv("MIN_INTERVAL_MS", "1000")) / 1000.0)
+
         while True:
             job = send_queue.get()
             if job is None:
@@ -68,6 +74,13 @@ def main():
             reply_id = job.get("reply_id")
             post_id = job.get("post_id")
             text = job.get("text")
+
+            with _last_lock:
+                now = time.monotonic()
+                wait = (_last_send_time + min_gap) - now
+                if wait > 0:
+                    time.sleep(wait)
+                _last_send_time = time.monotonic()
             
             try:
                 if lock:
@@ -82,8 +95,6 @@ def main():
                     f"{f' post_id={post_id}' if post_id else ''}"
                     f"{f' text={text!r}' if text else ''}"
                 )
-                min_gap = max(0.0, int(os.getenv("MIN_INTERVAL_MS", "1000")) / 1000.0)
-                time.sleep(min_gap)
             except Exception as e:
                 print(
                     f"[post-error]{(' ' + note) if note else ''}"
@@ -109,6 +120,9 @@ def main():
 
     # --- round-robin iterator across cfgs ---
     rr = cycle(cfgs)
+
+    # --- sleep ---
+    busy_sleep = max(0.0, int(os.getenv("BUSY_SLEEP", "1000")) / 1000.0)
     
     # --- main loop ---
     while True:
@@ -151,7 +165,6 @@ def main():
 
         # --- sleep ---
         if strategy == "boost":
-            busy_sleep = 8
             time.sleep(busy_sleep)
         else:
             base = 120
