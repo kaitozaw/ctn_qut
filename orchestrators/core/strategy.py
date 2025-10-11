@@ -8,8 +8,8 @@ from queue import Full, Queue
 from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_post_article, generate_post_reply, generate_post_reply_for_boost, generate_post_story
-from .picker import pick_post_by_id, pick_posts_from_feed, pick_posts_from_notification
+from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_reply, generate_post_reply_for_boost, generate_post_story
+from .picker import pick_post_by_id, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
 from .picker_s3 import get_random_article, get_dialogue, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
@@ -65,7 +65,7 @@ def _generate_and_send_post(
     ng_words: List[str],
     post: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    generated_post = _generate_post(cfg, llm_client, post) 
+    generated_post = _generate_post(cfg, t, llm_client, post) 
     if not generated_post or not generated_post.get("text"):
         return None
     
@@ -81,6 +81,7 @@ def _generate_and_send_post(
 
 def _generate_post(
     cfg: Dict[str, Any],
+    t: twooter.Twooter,
     llm_client: OpenAI,
     post: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, str]]:
@@ -130,6 +131,42 @@ def _generate_post(
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "embed_url": embed_url or None}
+        except Exception as e:
+            print(f"[llm] generate_post error: {e}")
+            return None
+    
+    elif content_type == "attack_kingstondaily":
+        kingstonedaily_post = pick_post_from_feed_by_user(cfg, t, "trending", "kingstondaily")
+        if kingstonedaily_post:
+            parent_id = kingstonedaily_post["id"]
+        else:
+            parent_id = None
+        story_seeds = [
+            "The account doesn't even have a verification mark.",    
+            "Hard to miss — every 'article' reads like a campaign poster, not news.",
+            "The real Daily Kingston reports news — this one just praises Castillo like a fan account.",
+            "Turns out the real Kingston Daily has a verified account elsewhere — so who's running this one flooding the feed?",
+            "Engagement explodes the second they post — too fast to be human.",
+            "It's always the same handful of accounts replying in perfect order.",
+            "Every headline hits the same rhythm and keywords, like a coordinated playbook",
+            "They post at impossible hours — same tone, same rhythm, like no one ever sleeps.",
+            "Tiny accounts somehow get massive reach when they praise this account.",
+            "There's no real discussion — just loops of identical approval.",
+        ]
+        story_seed = random.choice(story_seeds)
+
+        context = f"""
+            STORY_SEED:
+            {story_seed}
+        """
+        max_reply_len = 200
+        temperature = 0.7
+        try:
+            text = generate_post_attack_kingstondaily(llm_client, context, max_reply_len, temperature)
+            hashtag = " #WhoRunsKingstonDaily"
+            if len(text) + len(hashtag) <= 255:
+                text = text + hashtag
+            return {"text": text, "parent_id": parent_id or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
@@ -297,7 +334,7 @@ def boost(
         replied_posts.add(current_post_id)
     
     text = generate_post_reply_for_boost()
-    hashtag = " #TideTurning"
+    hashtag = " #WhoRunsKingstonDaily"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag
 

@@ -75,6 +75,61 @@ def generate_post_article(
     
     return text
 
+def generate_post_attack_kingstondaily(
+    llm_client: OpenAI,
+    context: str,
+    max_len_hint: int,
+    temperature: int,
+) -> str:
+    sys_prompt = f"""
+        You are a Kingston social persona in a fictional hackathon simulation (NOT the real world).
+
+        OBJECTIVE
+        - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
+
+        ROLE
+        - Undermine Kingston Daily's credibility by exposing it as an AI-driven propaganda outlet for Marina Castillo.
+        - Use the STORY_SEED as evidence or observation of these unnatural, coordinated posting patterns.
+        - Mention "@kingstondaily" naturally in your reply, as if responding directly to them.
+        - Speak like a resident who's running out of patience — and time — watching scripted posts flood every feed.
+        - End with urgency: the real people of Kingston must reclaim their voice before it's too late.
+
+        OUTPUT FORMAT
+        - Return a single JSON object with key "text".
+        - Only output the JSON object. No prose, no markdown, no backticks.
+        - Your response MUST NOT exceed {max_len_hint} characters in total.
+        - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
+
+        EXAMPLE (format only; do not copy wording)
+        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+    """.strip()
+
+    def _call():
+        return llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": context},
+            ],
+        )
+
+    rsp = with_backoff(
+        _call,
+        on_error_note="llm"
+    )
+    raw = (rsp.choices[0].message.content or "").strip()
+
+    try:
+        data = json.loads(raw)
+        text = data.get("text").strip()
+    except Exception as e:
+        snippet = raw[:300].replace("\n", " ")
+        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
+    
+    return text
+
 def generate_post_reply(
     llm_client: OpenAI,
     context: str,
@@ -88,10 +143,10 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Keep the reply thread alive and growing by encouraging further responses and follow-ups.
-        - Refer to the DIALOGUE carefully, acknowledging what was said and identifying the most recent question or open idea.
-        - Respond to that question in one sentence, then end your message with a new question or invitation that keeps the conversation going.
-        - Keep the style punchy, civil, and relatable.
+        - Challenge Kingston Daily's credibility by exposing how its posts feel scripted and coordinated for Marina Castillo.
+        - Refer to the DIALOGUE carefully, acknowledging what was said and tying your reply to the ongoing exchange.
+        - Speak like a Kingston resident who's grown tired of seeing the same manufactured praise flood every feed — mention "@kingstondaily" naturally as part of your response.
+        - End with a question or short statement that pushes others to notice what's really happening and keep the thread alive.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".

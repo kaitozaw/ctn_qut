@@ -23,6 +23,31 @@ def pick_post_by_id(
     target_post = extract_post_fields(item)
     return target_post
 
+def pick_post_from_feed_by_user(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    feed_key: str,
+    username: str,
+) -> Dict[str, Any]:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    feed = with_backoff(
+        lambda: t.feed(feed_key, top_n=20),
+        on_error_note="feed",
+        relogin_fn=relogin_fn
+    )
+    items = (feed or {}).get("data") or []
+
+    target_post = {}
+    for d in items:
+        post = extract_post_fields(d)
+        if post["author_username"] == username:
+            target_post = post
+            break
+    return target_post
+
 def pick_posts_from_feed(
     cfg: Dict[str, Any],
     t: twooter.Twooter,
