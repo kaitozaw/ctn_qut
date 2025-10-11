@@ -1,6 +1,6 @@
 import json
+import os
 import random
-import threading
 import time
 import twooter.sdk as twooter
 from openai import OpenAI
@@ -15,7 +15,9 @@ from .text_filter import safety_check
 from .transform import extract_post_fields
 
 def _choose_goal() -> int:
-    return random.choices([150, 200], weights=[0.8, 0.2], k=1)[0]
+    low = int(os.getenv("REPLY_GOAL_LOW", "1000"))
+    high = int(os.getenv("REPLY_GOAL_HIGH", "2000"))
+    return random.choices([low, high], weights=[0.8, 0.2], k=1)[0]
 
 def _decide_story_phase(story_histories: Dict[str, List[str]]) -> str:
     if not isinstance(story_histories, dict):
@@ -32,7 +34,6 @@ def _decide_story_phase(story_histories: Dict[str, List[str]]) -> str:
 
 def _enqueue_job(
     send_queue: Queue,
-    lock: threading.Lock,
     fn,
     relogin_fn,
     note: str,
@@ -41,7 +42,7 @@ def _enqueue_job(
     post_id: int = None,
     text: str = None,
 ):
-    job = {"lock": lock, "fn": fn, "relogin_fn": relogin_fn, "note": note, "persona_id": persona_id, "reply_id": reply_id, "post_id": post_id, "text": text}
+    job = {"fn": fn, "relogin_fn": relogin_fn, "note": note, "persona_id": persona_id, "reply_id": reply_id, "post_id": post_id, "text": text}
     try:
         send_queue.put_nowait(job)
         return True
@@ -296,7 +297,6 @@ def boost(
     t: twooter.Twooter,
     replied_posts: Set[int],
     send_queue: Queue,
-    lock: threading.Lock,
 ) -> str:
     persona_id = (cfg.get("persona_id") or "").strip()
     index = cfg.get("index", -1)
@@ -312,25 +312,16 @@ def boost(
     if current_post_id not in replied_posts:
         def _like(): return t.post_like(post_id=current_post_id)
         def _repost(): return t.post_repost(post_id=current_post_id)
-        if lock:
-            with lock:
-                try:
-                    with_backoff(_like, on_error_note="like", relogin_fn=relogin_fn)
-                except Exception as e:
-                    pass
-                try:
-                    with_backoff(_repost, on_error_note="repost", relogin_fn=relogin_fn)
-                except Exception as e:
-                    pass
-        else:
-            try:
-                with_backoff(_like, on_error_note="like", relogin_fn=relogin_fn)
-            except Exception as e:
-                pass
-            try:
-                with_backoff(_repost, on_error_note="repost", relogin_fn=relogin_fn)
-            except Exception as e:
-                pass
+
+        try:
+            with_backoff(_like, on_error_note="like", relogin_fn=relogin_fn)
+        except Exception as e:
+            pass
+        try:
+            with_backoff(_repost, on_error_note="repost", relogin_fn=relogin_fn)
+        except Exception as e:
+            pass
+
         replied_posts.add(current_post_id)
     
     text = generate_post_reply_for_boost()
@@ -339,7 +330,7 @@ def boost(
         text = text + hashtag
 
     def _send(): return t.post(text, parent_id=current_post_id)
-    enq = _enqueue_job(send_queue, lock=lock, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=current_post_id, text=text)
+    enq = _enqueue_job(send_queue, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=current_post_id, text=text)
     if not enq:
         return "SKIPPED"
     return "ENQUEUED"

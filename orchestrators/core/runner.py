@@ -13,13 +13,12 @@ def run_once(
     ng_words: List[str],
     replied_posts: Set[int],
     send_queue: Queue,
-    lock: threading.Lock,
 ) -> str:
     if strategy == "attract":
         result = attract(cfg, t, llm_client, ng_words, replied_posts)
         return result
     elif strategy == "boost":
-        result = boost(cfg, t, replied_posts, send_queue, lock)
+        result = boost(cfg, t, replied_posts, send_queue)
         return result
     else:
         return "NO_STRATEGY"

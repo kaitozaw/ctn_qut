@@ -3,6 +3,7 @@ import random
 import threading
 import time
 import twooter.sdk as twooter
+from collections import defaultdict
 from dotenv import load_dotenv
 from itertools import cycle
 from orchestrators.core import build_llm_client, ensure_session, filter_cfgs_by_env, load_cfg, load_ng, run_once, SkipPersona, whoami_username, with_backoff
@@ -49,24 +50,22 @@ def main():
 
     # --- send queue ---
     try:
-        qmax = int(os.getenv("SEND_QUEUE_MAX", "10"))
+        qmax = int(os.getenv("SEND_QUEUE_MAX", "30"))
     except ValueError:
-        qmax = 100
+        qmax = 30
     send_queue: Queue = Queue(maxsize=qmax)
 
     # --- lock ---
-    lock_by_persona: Dict[str, threading.Lock] = {}
-
+    lock_by_persona: Dict[str, threading.Lock] = defaultdict(threading.Lock)
+    last_send_time_by_persona: Dict[str, float] = defaultdict(float)
+    
     # --- worker function ---
     def _worker(name: str):
-        global _last_send_time
-        min_gap = max(0.0, int(os.getenv("MIN_INTERVAL_MS", "1000")) / 1000.0)
-
+        min_gap_per_persona = max(0.0, int(os.getenv("MIN_INTERVAL_PER_PERSONA_MS", "35000")) / 1000.0)
         while True:
             job = send_queue.get()
             if job is None:
                 break
-            lock: threading.Lock = job.get("lock")
             fn = job["fn"]
             relogin_fn = job.get("relogin_fn")
             note = job.get("note", "")
@@ -75,19 +74,17 @@ def main():
             post_id = job.get("post_id")
             text = job.get("text")
 
-            with _last_lock:
+            lock = lock_by_persona[persona_id]
+            with lock:
                 now = time.monotonic()
-                wait = (_last_send_time + min_gap) - now
+                jitter = random.uniform(-0.2, 0.2) * min_gap_per_persona
+                wait = (last_send_time_by_persona[persona_id] + min_gap_per_persona + jitter) - now
                 if wait > 0:
                     time.sleep(wait)
-                _last_send_time = time.monotonic()
+                last_send_time_by_persona[persona_id] = time.monotonic()
             
             try:
-                if lock:
-                    with lock:
-                        with_backoff(fn, on_error_note=note, relogin_fn=relogin_fn)
-                else:
-                    with_backoff(fn, on_error_note=note, relogin_fn=relogin_fn)
+                with_backoff(fn, on_error_note=note, relogin_fn=relogin_fn)
                 print(
                     f"[sent]{(' ' + note) if note else ''}"
                     f" persona={persona_id}"
@@ -100,15 +97,15 @@ def main():
                     f"[post-error]{(' ' + note) if note else ''}"
                     f" persona={persona_id}"
                     f"{f' reply_id={reply_id}' if reply_id else ''}"
-                    f"{f' post_id={post_id}' if post_id else ''}" 
-                    f"{e.__class__.__name__}: {e}"
+                    f"{f' post_id={post_id}' if post_id else ''}"
+                    f" {e.__class__.__name__}: {e}"
                 )
             finally:
                 send_queue.task_done()
 
     # --- start workers ---
     try:
-        workers_n = int(os.getenv("WORKERS", "1"))
+        workers_n = int(os.getenv("WORKERS", "9"))
     except ValueError:
         workers_n = 1
     for i in range(workers_n):
@@ -150,15 +147,9 @@ def main():
             replied_posts = set()
             replied_posts_by_persona[persona_id] =  replied_posts
 
-        # --- lock ---
-        lock = lock_by_persona.get(persona_id)
-        if lock is None:
-            lock = threading.Lock()
-            lock_by_persona[persona_id] = lock
-
         # --- run once for this persona ---
         try:
-            status = run_once(cfg, t, strategy, llm_client, ng_words,  replied_posts, send_queue, lock)
+            status = run_once(cfg, t, strategy, llm_client, ng_words,  replied_posts, send_queue)
         except Exception as e:
             status = "ERROR"
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
