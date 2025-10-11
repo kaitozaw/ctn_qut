@@ -15,8 +15,8 @@ from .text_filter import safety_check
 from .transform import extract_post_fields
 
 def _choose_goal() -> int:
-    low = int(os.getenv("REPLY_GOAL_LOW", "1000"))
-    high = int(os.getenv("REPLY_GOAL_HIGH", "2000"))
+    low = int(os.getenv("REPLY_GOAL_LOW", "1500"))
+    high = int(os.getenv("REPLY_GOAL_HIGH", "2500"))
     return random.choices([low, high], weights=[0.8, 0.2], k=1)[0]
 
 def _decide_story_phase(story_histories: Dict[str, List[str]]) -> str:

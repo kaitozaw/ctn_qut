@@ -105,9 +105,9 @@ def main():
 
     # --- start workers ---
     try:
-        workers_n = int(os.getenv("WORKERS", "9"))
+        workers_n = int(os.getenv("WORKERS", "10"))
     except ValueError:
-        workers_n = 1
+        workers_n = 10
     for i in range(workers_n):
         th = threading.Thread(target=_worker, args=(f"w{i}",), daemon=True)
         th.start()
