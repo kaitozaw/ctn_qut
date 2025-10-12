@@ -8,7 +8,7 @@ from queue import Full, Queue
 from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_reply, generate_post_reply_for_boost, generate_post_story
+from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story
 from .picker import pick_post_by_id, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
 from .picker_s3 import get_random_article, get_dialogue, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
@@ -168,6 +168,48 @@ def _generate_post(
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "parent_id": parent_id or None}
+        except Exception as e:
+            print(f"[llm] generate_post error: {e}")
+            return None
+        
+    elif content_type == "call_for_action":
+        story_seeds = [
+            {
+                "mention": "@muzhi_wong",
+                "action": "Investigate whether any financial or sponsorship links exist between @dailykingston and @marina_castillo, and report transparently on your findings.",
+                "reasoning": "You've consistently highlighted how hidden collaborations between media outlets and campaigns can mislead voters; this case deserves a thorough, transparent inquiry."
+            },
+            {
+                "mention": "@lisa_podworth",
+                "action": "Expose whether @dailykingston is acting in concert with @marina_castillo and reveal the evidence behind its coordinated messaging.",
+                "reasoning": "You've consistently warned that social platforms can quietly distort elections; this case demands scrutiny."
+            },
+            {
+                "mention": "@marina_castillo",
+                "action": "Come forward and clarify any direct or indirect ties between your campaign and @dailykingston",
+                "reasoning": "You've always been critical of how social platforms shape public opinion, yet you're now suspected of doing the same through @dailykingston."
+            }
+        ]
+        story_seed = random.choice(story_seeds)
+
+        context = f"""
+            MENTION:
+            {story_seed["mention"]}
+
+            ACTION:
+            {story_seed["action"]}
+
+            REASONING:
+            {story_seed["reasoning"]}
+        """
+        max_reply_len = 220
+        temperature = 0.7
+        try:
+            text = generate_post_call_for_action(llm_client, context, max_reply_len, temperature)
+            hashtag = " #WhoRunsKingstonDaily"
+            if len(text) + len(hashtag) <= 255:
+                text = text + hashtag
+            return {"text": text }
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
