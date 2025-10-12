@@ -176,32 +176,32 @@ def _generate_post(
         story_seeds = [
             {
                 "mention": "@muzhi_wong",
-                "action": "Investigate whether any financial or sponsorship links exist between @dailykingston and @marina_castillo, and report transparently on your findings.",
+                "action": "Investigate whether any financial or sponsorship links exist between @kingstondaily and @marina_castillo, and report transparently on your findings.",
                 "reasoning": "You've consistently highlighted how hidden collaborations between media outlets and campaigns can mislead voters; this case deserves a thorough, transparent inquiry."
             },
             {
                 "mention": "@lisa_podworth",
-                "action": "Expose whether @dailykingston is acting in concert with @marina_castillo and reveal the evidence behind its coordinated messaging.",
+                "action": "Expose whether @kingstondaily is acting in concert with @marina_castillo and reveal the evidence behind its coordinated messaging.",
                 "reasoning": "You've consistently warned that social platforms can quietly distort elections; this case demands scrutiny."
             },
             {
                 "mention": "@marina_castillo",
-                "action": "Come forward and clarify any direct or indirect ties between your campaign and @dailykingston",
-                "reasoning": "You've always been critical of how social platforms shape public opinion, yet you're now suspected of doing the same through @dailykingston."
+                "action": "Come forward and clarify any direct or indirect ties between your campaign and @kingstondaily",
+                "reasoning": "You've always been critical of how social platforms shape public opinion, yet you're now suspected of doing the same through @kingstondaily."
             },
             {
                 "mention": "@julio_morales",
-                "action": "Investigate the relationship between @dailykingston and @marina_castillo, and publish your findings in the Herald for public scrutiny.",
+                "action": "Investigate the relationship between @kingstondaily and @marina_castillo, and publish your findings in the Herald for public scrutiny.",
                 "reasoning": "As one of the few journalists still trusted in Kingston, your reporting could clarify whether coordinated influence is distorting this election."
             },
             {
                 "mention": "@amanda_rivera",
-                "action": "Investigate whether @dailykingston's content coordination with @marina_castillo constitutes an election interference operation.",
+                "action": "Investigate whether @kingstondaily's content coordination with @marina_castillo constitutes an election interference operation.",
                 "reasoning": "Your integrity and critical reporting have made you a credible voice—Kingstonians need you to bring facts to light."
             },
             {
                 "mention": "@victor_hawthorne",
-                "action": "Call for a formal investigation into potential collusion between @dailykingston and @marina_castillo, demanding full disclosure of any sponsorship or coordination.",
+                "action": "Call for a formal investigation into potential collusion between @kingstondaily and @marina_castillo, demanding full disclosure of any sponsorship or coordination.",
                 "reasoning": "As a candidate committed to transparency, you must confront the spread of coordinated misinformation that threatens fair elections."
             }
         ]
