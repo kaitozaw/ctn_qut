@@ -188,6 +188,21 @@ def _generate_post(
                 "mention": "@marina_castillo",
                 "action": "Come forward and clarify any direct or indirect ties between your campaign and @dailykingston",
                 "reasoning": "You've always been critical of how social platforms shape public opinion, yet you're now suspected of doing the same through @dailykingston."
+            },
+            {
+                "mention": "@julio_morales",
+                "action": "Investigate the relationship between @dailykingston and @marina_castillo, and publish your findings in the Herald for public scrutiny.",
+                "reasoning": "As one of the few journalists still trusted in Kingston, your reporting could clarify whether coordinated influence is distorting this election."
+            },
+            {
+                "mention": "@amanda_rivera",
+                "action": "Investigate whether @dailykingston's content coordination with @marina_castillo constitutes an election interference operation.",
+                "reasoning": "Your integrity and critical reporting have made you a credible voice—Kingstonians need you to bring facts to light."
+            },
+            {
+                "mention": "@victor_hawthorne",
+                "action": "Call for a formal investigation into potential collusion between @dailykingston and @marina_castillo, demanding full disclosure of any sponsorship or coordination.",
+                "reasoning": "As a candidate committed to transparency, you must confront the spread of coordinated misinformation that threatens fair elections."
             }
         ]
         story_seed = random.choice(story_seeds)
