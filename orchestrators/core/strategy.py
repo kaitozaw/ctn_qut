@@ -193,7 +193,7 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_attack_marina(llm_client, context, max_reply_len, temperature)
-            hashtag = " #TakeBackLegitFromCastillo"
+            hashtag = " #CastilloOwnsLegit"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "embed_url": embed_url or None, "media_url": media_url or None}
@@ -412,7 +412,7 @@ def boost(
         replied_posts.add(current_post_id)
     
     text = generate_post_reply_for_boost()
-    hashtag = " #TakeBackLegitFromCastillo"
+    hashtag = " #CastilloOwnsLegit"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag
 
