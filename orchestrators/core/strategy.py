@@ -8,7 +8,7 @@ from queue import Full, Queue
 from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story
+from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story
 from .picker import pick_post_by_id, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
 from .picker_s3 import get_random_article, get_dialogue, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
@@ -73,8 +73,9 @@ def _generate_and_send_post(
     text = generated_post.get("text")
     parent_id = generated_post.get("parent_id")
     embed_url = generated_post.get("embed_url")
+    media_url = generated_post.get("media_url")
 
-    sent_post = _send_post(cfg, t, ng_words, text, parent_id, embed_url)
+    sent_post = _send_post(cfg, t, ng_words, text, parent_id, embed_url, media_url)
     if not sent_post:
         return None
 
@@ -168,6 +169,34 @@ def _generate_post(
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "parent_id": parent_id or None}
+        except Exception as e:
+            print(f"[llm] generate_post error: {e}")
+            return None
+    elif content_type == "attack_marina":
+        story_seeds = [
+            "She openly discussed hiring outside teams to sway voters—proof of deliberate manipulation.",
+            "She admitted employing multiple groups, revealing a coordinated influence network.",
+            "She directed operatives to flood Legit, showing planned control of online discourse.",
+            "She ordered image attacks, exposing an intent to distort perception, not debate.",
+            "She offered payment for influence, turning political messaging into a paid service.",
+            "She promised government roles for success, tying propaganda to future power."
+        ]
+        story_seed = random.choice(story_seeds)
+        embed_url = "https://kingston-herald.legitreal.com/post/2025-10-13-election-integrity-concerns-rise-as-social-media-manipulation-detected/"
+        media_url = ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxc29qcGN4NGFyMmc1cnAwbnZ0bzRmNnNpb3Z4OXBjbzMxenczayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1vbG073FTJcmwYzPiY/giphy.gif"]
+
+        context = f"""
+            STORY_SEED:
+            {story_seed}
+        """
+        max_reply_len = 200
+        temperature = 0.7
+        try:
+            text = generate_post_attack_marina(llm_client, context, max_reply_len, temperature)
+            hashtag = " #TakeBackLegitFromCastillo"
+            if len(text) + len(hashtag) <= 255:
+                text = text + hashtag
+            return {"text": text, "embed_url": embed_url or None, "media_url": media_url or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
@@ -274,6 +303,7 @@ def _send_post(
     text: str,
     parent_id: Optional[int] = None,
     embed_url: Optional[str] = None,
+    media_url: Optional[List[str]] = None,
 ) -> Optional[Dict[str, Any]]:
     persona_id = (cfg.get("persona_id") or "").strip()
     index = cfg.get("index", -1)
@@ -285,7 +315,7 @@ def _send_post(
         return None
     
     post_create= with_backoff(
-        lambda: t.post(safe_text, parent_id=parent_id or None, embed=embed_url or None),
+        lambda: t.post(safe_text, parent_id=parent_id or None, embed=embed_url or None, media=media_url or None),
         on_error_note="post_create",
         relogin_fn=relogin_fn
     )
@@ -382,7 +412,7 @@ def boost(
         replied_posts.add(current_post_id)
     
     text = generate_post_reply_for_boost()
-    hashtag = " #WhoRunsKingstonDaily"
+    hashtag = " #TakeBackLegitFromCastillo"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag
 

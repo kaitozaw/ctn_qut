@@ -1,10 +1,13 @@
 import json
 import os
 import random
+from dotenv import load_dotenv
 from openai import OpenAI
 from .backoff import with_backoff
 
-with open("text/reply_pool.json", "r", encoding="utf-8") as f:
+load_dotenv()
+reply_pool_path = os.getenv("REPLY_POOL", "reply_pool/default.json")
+with open(reply_pool_path, "r", encoding="utf-8") as f:
     REPLY_POOL = json.load(f)
 
 def build_llm_client() -> OpenAI:    
@@ -93,6 +96,65 @@ def generate_post_attack_kingstondaily(
         - Mention "@kingstondaily" naturally in your reply, as if responding directly to them.
         - Speak like a resident who's running out of patience — and time — watching scripted posts flood every feed.
         - End with urgency: the real people of Kingston must reclaim their voice before it's too late.
+
+        OUTPUT FORMAT
+        - Return a single JSON object with key "text".
+        - Only output the JSON object. No prose, no markdown, no backticks.
+        - Your response MUST NOT exceed {max_len_hint} characters in total.
+        - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
+
+        EXAMPLE (format only; do not copy wording)
+        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+    """.strip()
+
+    def _call():
+        return llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": context},
+            ],
+        )
+
+    rsp = with_backoff(
+        _call,
+        on_error_note="llm"
+    )
+    raw = (rsp.choices[0].message.content or "").strip()
+
+    try:
+        data = json.loads(raw)
+        text = data.get("text").strip()
+    except Exception as e:
+        snippet = raw[:300].replace("\n", " ")
+        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
+    
+    return text
+
+def generate_post_attack_marina(
+    llm_client: OpenAI,
+    context: str,
+    max_len_hint: int,
+    temperature: int,
+) -> str:
+    sys_prompt = f"""
+        You are a Kingston social persona in a fictional hackathon simulation (NOT the real world).
+
+        OBJECTIVE
+        - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
+
+        ROLE
+        - Expose Marina Castillo as the architect of paid propaganda teams uncovered through her own leaked meetings.
+        - Treat the STORY_SEED as the central clue — let its details shape your tone and imagery. 
+            - If it describes hiring or payment, sound outraged by corruption.
+            - If it shows coordination or flooding, sound alarmed by control and manipulation.
+            - If it reveals image attacks, sound disgusted by dishonesty.
+            - If it mentions promises of power, sound fearful of what comes next.
+        - Confront "@marina_castillo" directly, demanding accountability for the manipulation spreading across Legit.
+        - Speak like a Kingston local who7s emotionally reacting to *that* specific revelation, not repeating generic outrage.
+        - End with urgency: if people ignore this, her synthetic influence will overwrite real democracy.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".
