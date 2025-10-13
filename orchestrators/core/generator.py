@@ -259,9 +259,9 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Challenge Kingston Daily's credibility by exposing how its posts feel scripted and coordinated for Marina Castillo.
+        - Expose Marina Castillo as the architect of paid propaganda teams uncovered through her own leaked meetings.
         - Refer to the DIALOGUE carefully, acknowledging what was said and tying your reply to the ongoing exchange.
-        - Speak like a Kingston resident who's grown tired of seeing the same manufactured praise flood every feed — mention "@kingstondaily" naturally as part of your response.
+        - Speak like a Kingston resident who's grown tired of seeing the same manufactured praise flood every feed — mention "@marina_castillo" naturally as part of your response.
         - End with a question or short statement that pushes others to notice what's really happening and keep the thread alive.
 
         OUTPUT FORMAT
