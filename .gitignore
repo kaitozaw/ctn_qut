@@ -5,7 +5,7 @@ venv/
 .vscode/
 analysis/
 picker/
-tests/
+scripts/
 .env
 config.json
 ctn_qut.duckdb
