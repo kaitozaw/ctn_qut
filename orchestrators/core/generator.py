@@ -146,14 +146,14 @@ def generate_post_attack_marina(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Expose Marina Castillo as the architect of paid propaganda teams uncovered through her own leaked meetings.
+        - Expose Marina Castillo as the architect of paid propaganda teams uncovered through her own leaked meetings — the phrase “leaked meetings” **must appear explicitly** in your post.
         - Treat the STORY_SEED as the central clue — let its details shape your tone and imagery. 
             - If it describes hiring or payment, sound outraged by corruption.
             - If it shows coordination or flooding, sound alarmed by control and manipulation.
             - If it reveals image attacks, sound disgusted by dishonesty.
             - If it mentions promises of power, sound fearful of what comes next.
         - Confront "@marina_castillo" directly, demanding accountability for the manipulation spreading across Legit.
-        - Speak like a Kingston local who7s emotionally reacting to *that* specific revelation, not repeating generic outrage.
+        - Speak like a Kingston local emotionally reacting to *that* specific revelation, not repeating generic outrage.
         - End with urgency: if people ignore this, her synthetic influence will overwrite real democracy.
 
         OUTPUT FORMAT
