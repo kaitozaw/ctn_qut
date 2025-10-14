@@ -49,13 +49,13 @@ def _enqueue_job(
     except Full:
         return False
 
-def _filter_posts_by_verified(
+def _filter_posts_by_npc(
     posts: List[Dict[str, Any]],
 ) -> List[Dict[str, Any]]:
     filtered_posts = []
     for post in posts:
-        author_verified = bool((post or {}).get("author_verified"))
-        if author_verified:
+        author_id = (post or {}).get("author_id")
+        if isinstance(author_id, int) and author_id <= 800:
             filtered_posts.append(post)
     return filtered_posts
 
@@ -382,26 +382,21 @@ def attract(
     trending_posts = pick_posts_from_feed(cfg, t, "trending") or []
     write_trending_posts(trending_posts)
 
-    replies = []
     if persona_id != current_persona_id:
         notification_posts = pick_posts_from_notification(cfg, t)
-        notification_posts_from_verified = _filter_posts_by_verified(notification_posts)
-        for notification_post in notification_posts_from_verified:
+        notification_posts_from_npc = _filter_posts_by_npc(notification_posts)
+        for notification_post in notification_posts_from_npc:
             if notification_post["id"] not in replied_posts:
                 write_dialogues(persona_id, notification_post)
                 reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
                 if reply:
                     write_dialogues(persona_id, reply)
-                    replies.append(reply)
                     replied_posts.add(notification_post["id"])
             time.sleep(5)
 
-    if not cur or not post or replies or reply_count >= current_reply_goal:
-        if replies:
-            target_post = replies.pop(0)
-        else: 
-            target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
-            write_dialogues(persona_id, target_post)
+    if not cur or not post or reply_count >= current_reply_goal:
+        target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
+        write_dialogues(persona_id, target_post)
 
         if not target_post:
             return "NO_TARGET_POST"
