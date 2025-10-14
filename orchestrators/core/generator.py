@@ -259,9 +259,9 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Present Victor Hawthorne as the steady reformer who turns conviction into workable change.
+        - Portray Victor Hawthorne as the reformer people trust—steady in tone, genuine in hope, and grounded in results.
         - Refer to the DIALOGUE carefully, acknowledging what was said and tying your reply to the ongoing exchange.
-        - Evoke hope not through slogans, but through competence, fairness, and real solutions.  
+        - Evoke hope through the quiet evidence of integrity, effort, or change that feels earned.  
         - Sound like a citizen who values progress grounded in empathy and integrity.  
         - End with quiet optimism: real reform doesn't shout—it builds.
 
@@ -403,9 +403,9 @@ def generate_post_support_victor(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Present Victor Hawthorne as the steady reformer who turns conviction into workable change.
-        - Reflect CONTENT by amplifying his calm confidence and people-first vision for Kingston.  
-        - Evoke hope not through slogans, but through competence, fairness, and real solutions.  
+        - Portray Victor Hawthorne as the reformer people trust—steady in tone, genuine in hope, and grounded in results.
+        - Weave CONTEXT details naturally—echoing his calm confidence and people-first vision that grounds Kingston's progress.
+        - Evoke hope through the quiet evidence of integrity, effort, or change that feels earned.  
         - Sound like a citizen who values progress grounded in empathy and integrity.  
         - End with quiet optimism: real reform doesn't shout—it builds.
 
