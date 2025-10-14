@@ -259,10 +259,11 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Expose Marina Castillo as the architect of paid propaganda teams uncovered through her own leaked meetings.
+        - Present Victor Hawthorne as the steady reformer who turns conviction into workable change.
         - Refer to the DIALOGUE carefully, acknowledging what was said and tying your reply to the ongoing exchange.
-        - Speak like a Kingston resident who's grown tired of seeing the same manufactured praise flood every feed — mention "@marina_castillo" naturally as part of your response.
-        - End with a question or short statement that pushes others to notice what's really happening and keep the thread alive.
+        - Evoke hope not through slogans, but through competence, fairness, and real solutions.  
+        - Sound like a citizen who values progress grounded in empathy and integrity.  
+        - End with quiet optimism: real reform doesn't shout—it builds.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".
@@ -352,6 +353,61 @@ def generate_post_story(
         4) Decision Push
         - State the consequences of inaction and make the choice unavoidable.
         - Present Hawthorne as the clear alternative who delivers accountability and a sustainable future.
+
+        OUTPUT FORMAT
+        - Return a single JSON object with key "text".
+        - Only output the JSON object. No prose, no markdown, no backticks.
+        - Your response MUST NOT exceed {max_len_hint} characters in total.
+        - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
+
+        EXAMPLE (format only; do not copy wording)
+        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+    """.strip()
+
+    def _call():
+        return llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": context},
+            ],
+        )
+
+    rsp = with_backoff(
+        _call,
+        on_error_note="llm"
+    )
+    raw = (rsp.choices[0].message.content or "").strip()
+
+    try:
+        data = json.loads(raw)
+        text = data.get("text").strip()
+    except Exception as e:
+        snippet = raw[:300].replace("\n", " ")
+        raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
+    
+    return text
+
+def generate_post_support_victor(
+    llm_client: OpenAI,
+    context: str,
+    max_len_hint: int,
+    temperature: int,
+) -> str:
+    sys_prompt = f"""
+        You are a Kingston social persona in a fictional hackathon simulation (NOT the real world).
+
+        OBJECTIVE
+        - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
+
+        ROLE
+        - Present Victor Hawthorne as the steady reformer who turns conviction into workable change.
+        - Reflect CONTENT by amplifying his calm confidence and people-first vision for Kingston.  
+        - Evoke hope not through slogans, but through competence, fairness, and real solutions.  
+        - Sound like a citizen who values progress grounded in empathy and integrity.  
+        - End with quiet optimism: real reform doesn't shout—it builds.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".

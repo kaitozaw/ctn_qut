@@ -8,9 +8,9 @@ from queue import Full, Queue
 from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
-from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story
+from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story, generate_post_support_victor
 from .picker import pick_post_by_id, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
-from .picker_s3 import get_random_article, get_dialogue, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
+from .picker_s3 import get_dialogue, get_random_article, get_random_post_id, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -290,6 +290,35 @@ def _generate_post(
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text}
+        except Exception as e:
+            print(f"[llm] generate_post error: {e}")
+            return None
+    elif content_type == "support_victor":
+        post_id = get_random_post_id()
+        if post_id:
+            post = pick_post_by_id(cfg, t, post_id)
+        parent_id = (post or {}).get("id")
+        content = (post or {}).get("content")
+        media_urls = [
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHpxazhzdjF4YjNoenlmZjVkeHRnb3FldHZzN2NueHd2azZrdjl1eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Xg5p5RO9zWRGU7dINl/giphy.gif"],
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDJmc2VkaHl6dXdqNjFtYjZzZHV1aHhnZzB1c3FuNW0xZDFsN2NjbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UCDuCvRw9sdYuiWv7f/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTlvbTVyNHJ3YjRqeTJrY294c2s3NWltOXY2NWFtZGpib3NsMHZjMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KxaCrt3Wvw2aRN0m5v/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXNjeTZhMmdxMmF2bzY3cWk3dGR4a2h1MW1zZnV3ODgxNnpwZm8zaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uREGaBUVSmtmO4Q3uy/giphy.gif"]
+        ]
+        media_url = random.choice(media_urls)
+
+        context = f"""
+            CONTENT:
+            {content}
+        """
+        max_reply_len = 200
+        temperature = 0.7
+        try:
+            text = generate_post_support_victor(llm_client, context, max_reply_len, temperature)
+            hashtag = " #VoteVictor"
+            if len(text) + len(hashtag) <= 255:
+                text = text + hashtag
+            return {"text": text, "parent_id": parent_id or None, "media_url": media_url or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
