@@ -253,7 +253,7 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_call_for_action(llm_client, context, max_reply_len, temperature)
-            hashtag = " #WhoRunsKingstonDaily"
+            hashtag = " #CastilloOwnsLegit"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text }
@@ -296,6 +296,7 @@ def _generate_post(
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
+    
     elif content_type == "support_victor":
         post = pick_post_from_feed(cfg, t, "trending")
         parent_id = (post or {}).get("id")
