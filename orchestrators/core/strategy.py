@@ -127,7 +127,7 @@ def _generate_post(
             ARTICLE_CONTENT:
             {article_content}
         """
-        max_reply_len = 240
+        max_reply_len = 230
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)

@@ -36,10 +36,10 @@ def generate_post_article(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Base your reasoning on the ARTICLE CONTENT, drawing evidence directly from its themes or facts.  
-        - Contrast Victor Hawthorne's steady, people-first reform with the noise and short-termism around him.  
-        - Speak like a Kingston local who's tired of empty talk and ready for results.  
-        - End with a clear nudge — that real progress starts by voting for Victor.
+       	- Base your reasoning on the ARTICLE CONTENT, drawing evidence directly from its themes or facts.
+        - Contrast Victor Hawthorne's steady, people-first reform with the noise and short-termism around him.
+        - Speak like a Kingston local who's tired of empty talk and ready for change that actually lasts.
+        - End with conviction — remind people that real hope, real fairness, and real reform begin when we stand up and vote for Victor Hawthorne.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".
@@ -258,10 +258,14 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-       	- Refer to the DIALOGUE carefully and respond directly to what was asked or challenged.
-        - Strengthen your point with one believable fact, figure, or outcome that fits the flow of conversation.
-        - Avoid sounding argumentative; speak with calm conviction and clarity.
-        - End by connecting the fact to Kingston's shared well-being or progress.
+        - Read the DIALOGUE carefully and address the exact point raised (costs, KPIs, ROI, evidence, verification).
+        - Weave ONE realistic figure or range naturally into your reply to support your point. 
+            - Vary how you express it: sometimes a numeric range (5-8%), sometimes a rounded number (“around 130 units”), or a verbal form (“roughly one in ten”, “a single-digit gain”). 
+            - Place it flexibly—beginning, middle, or end of the sentence—to keep the tone conversational.
+            - Keep it modest and plausible; the point is credibility, not precision.
+        - If proof is requested, sound sure and transparent: offer to DM the audit reference or dataset, or mention that monthly dashboards and third-party reviews exist.
+        - Let your tone be informed but conversational—agree when fair, clarify when needed, and always link back to Kingston's shared progress.
+        - Vary your closure: you may end with confidence (“the audit file's ready”), transparency (“data's in the public dashboard”), or openness (“happy to share the CSV privately”).
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".
