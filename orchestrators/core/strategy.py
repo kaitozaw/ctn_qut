@@ -127,11 +127,11 @@ def _generate_post(
             ARTICLE_CONTENT:
             {article_content}
         """
-        max_reply_len = 230
+        max_reply_len = 200
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)
-            hashtag = " #VoteVictor"
+            hashtag = " #VoteVictor #KingstonElection"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "embed_url": embed_url or None}
@@ -163,7 +163,7 @@ def _generate_post(
             STORY_SEED:
             {story_seed}
         """
-        max_reply_len = 230
+        max_reply_len = 220
         temperature = 0.7
         try:
             text = generate_post_attack_kingstondaily(llm_client, context, max_reply_len, temperature)
@@ -191,7 +191,7 @@ def _generate_post(
             STORY_SEED:
             {story_seed}
         """
-        max_reply_len = 230
+        max_reply_len = 220
         temperature = 0.7
         try:
             text = generate_post_attack_marina(llm_client, context, max_reply_len, temperature)
@@ -248,7 +248,7 @@ def _generate_post(
             REASONING:
             {story_seed["reasoning"]}
         """
-        max_reply_len = 230
+        max_reply_len = 220
         temperature = 0.7
         try:
             text = generate_post_call_for_action(llm_client, context, max_reply_len, temperature)
