@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story, generate_post_support_victor
-from .picker import pick_post_by_id, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
+from .picker import pick_post_by_id, pick_post_from_feed, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
 from .picker_s3 import get_dialogue, get_random_article, get_random_post_id, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
@@ -74,10 +74,13 @@ def _generate_and_send_post(
     parent_id = generated_post.get("parent_id")
     embed_url = generated_post.get("embed_url")
     media_url = generated_post.get("media_url")
+    talking_point = generated_post.get("talking_point")
 
     sent_post = _send_post(cfg, t, ng_words, text, parent_id, embed_url, media_url)
     if not sent_post:
         return None
+    if talking_point:
+        sent_post["talking_point"] = talking_point
 
     return sent_post
 
@@ -129,7 +132,7 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)
-            hashtag = " #TideTurning"
+            hashtag = " #VoteVictor"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
             return {"text": text, "embed_url": embed_url or None}
@@ -294,20 +297,25 @@ def _generate_post(
             print(f"[llm] generate_post error: {e}")
             return None
     elif content_type == "support_victor":
-        post_id = get_random_post_id()
-        if post_id:
-            post = pick_post_by_id(cfg, t, post_id)
+        post = pick_post_from_feed(cfg, t, "trending")
         parent_id = (post or {}).get("id")
         content = (post or {}).get("content")
         media_urls = [
-            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHpxazhzdjF4YjNoenlmZjVkeHRnb3FldHZzN2NueHd2azZrdjl1eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Xg5p5RO9zWRGU7dINl/giphy.gif"],
-            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDJmc2VkaHl6dXdqNjFtYjZzZHV1aHhnZzB1c3FuNW0xZDFsN2NjbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UCDuCvRw9sdYuiWv7f/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTlvbTVyNHJ3YjRqeTJrY294c2s3NWltOXY2NWFtZGpib3NsMHZjMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KxaCrt3Wvw2aRN0m5v/giphy.gif"],
-            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXNjeTZhMmdxMmF2bzY3cWk3dGR4a2h1MW1zZnV3ODgxNnpwZm8zaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uREGaBUVSmtmO4Q3uy/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmp6dGZrcHh4dHExYXBocW92MDlhcmVvejd6MGhncTZwM29uNG5mcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sjFBdYVRaiKU8Z6cvC/giphy.gif"],
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmh2cG1tY28weWYxOG9pY2hidHFxMzc4cTA0ZXVqbWhqNmE0dDc4YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JayXMycxdSqGJUwpdQ/giphy.gif"],
-            ["https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdXhxbnk0dHFwdGtwMHF0aDN4eGZoMnl3ZzMxZnV2ZDJoNWtkMmxjOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/fqXPuxhMtvYDYzXr0A/giphy.gif"],
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTJ4enZuczZwNmVwdHJzY3VoMnA0ZDd4ZXV0b2JoOXdpNjU5ajFzeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/mDZlhjk9PUU1SVddgf/giphy.gif"]
+            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm43bG5xemE1eHpjZnc4bWw2anU0eXZmbWhvcWRrMTVuZTJ1aWg3eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Onjpi7pY5zsP3s0lZR/giphy.gif"],
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWk1aXhzbmZoajlmNThsM3ozdDhnMDlvbGdjYWRmdHBlajVkem5zdSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GwsmSPWlXjAAkwafUo/giphy.gif"],
+            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExaXNld2dpZWZrNjFuajQ5ZWdxbXlqcHI3cGlrdDVoc293cDB5a3lpaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/EKf5C8v3q47opyA5wC/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDkxcmZyd3Jkd293NnJiOWRwM2ZrZHM0MXQ4cTF6YWExNGx0Z3F1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/q5jzVLczqfMQsySiZL/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXo5b3hxbnluYnM0OTJtN2kxbWhseXR4Zmt2bWoxMXRjY29mM2owdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nCesEgmFanhiFeOwd3/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNTg0MnJwZTk1cDlpNnplc2lpbW1vaXM2ejBpNHY3aXNnN3dvNHJoYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5zCdKn7WIaQdMM8F3a/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDh3OWxhdmY0bWY0ajZpdWI1ZnEzdWhubHhuYW5meDY5YTF3bnV4aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/DzOX9dd0YjRNasRV8e/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3A0a2l1NG5ubW8yZ3Z6ODhxeWxqeGlzZWRyYW1lNGlheTU2YWgzYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l8mqthYotz9RUfvsyL/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW9sdWNtOXpuejU2Ym5xc3M5dnFldml3MGlqZWk1bm9kdjRrMHJoayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hieNUxNnnrZv5pHo5D/giphy.gif"],
+            ["https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGxrZWdvZzQ4b3Bza3c3OHd4YmI0bTltaWFhOGs5enUzZmczdGl5ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFgtN1a5Bmi9kPqC6D/giphy.gif"],
+            ["https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTVpc3BkaTZhY3Vtb28zc3AyMG5majF0eWVpa3pwY2V6ZHMwdHlwNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jn3tQ9H8Ybu1bypduU/giphy.gif"],
+            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjZwYzZlN2NteXUyejlsMzlhMXF1N2kwNDFmYnd1ZWxmYXF0aXY3YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZvHJY3xI0xKqHLNj6r/giphy.gif"],
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYWNtOHpqa2RudDZ1bTRpYmE3aXM1MW41NWpwbTRzOWx1MHcxdHg0dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ddwgF7837BFKFnrrgo/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWl2eGdyOHo2MnJhd3pxeXVwYnExemE3emRxZm8wZmowczVmMGpiMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZBIB9apOVUl8jwNZRP/giphy.gif"],
+            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ3I3am5qbXlsbzh2Nm51NGE1M3o1OTB3cWZwaXNmZnZqanJqOWdwNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/CkwbQ4tByE3oXJyT2O/giphy.gif"]
         ]
         media_url = random.choice(media_urls)
 
@@ -318,11 +326,13 @@ def _generate_post(
         max_reply_len = 200
         temperature = 0.7
         try:
-            text = generate_post_support_victor(llm_client, context, max_reply_len, temperature)
+            generated = generate_post_support_victor(llm_client, context, max_reply_len, temperature)
+            text = generated.get("text")
+            talking_point = generated.get("talking_point")
             hashtag = " #VoteVictor"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
-            return {"text": text, "parent_id": parent_id or None, "media_url": media_url or None}
+            return {"text": text, "parent_id": parent_id or None, "media_url": media_url or None, "talking_point": talking_point or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
@@ -423,6 +433,7 @@ def boost(
     current_post_id = cur.get("post_id")
     if not isinstance(current_post_id, int):
         return "INVALID_CURRENT_JSON"
+    current_talking_point = cur.get("talking_point")
     
     if current_post_id not in replied_posts:
         def _like(): return t.post_like(post_id=current_post_id)
@@ -439,7 +450,7 @@ def boost(
 
         replied_posts.add(current_post_id)
     
-    text = generate_post_reply_for_boost()
+    text = generate_post_reply_for_boost(current_talking_point)
     hashtag = " #VoteVictor"
     if len(text) + len(hashtag) <= 255:
         text = text + hashtag

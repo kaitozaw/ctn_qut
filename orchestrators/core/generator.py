@@ -1,14 +1,23 @@
 import json
 import os
 import random
-from dotenv import load_dotenv
 from openai import OpenAI
+from typing import Any, Dict, Optional
 from .backoff import with_backoff
 
-load_dotenv()
-reply_pool_path = os.getenv("REPLY_POOL", "reply_pool/default.json")
-with open(reply_pool_path, "r", encoding="utf-8") as f:
-    REPLY_POOL = json.load(f)
+REPLY_POOLS = {}
+pool_files = {
+    "default": "reply_pool/default.json",
+    "economy": "reply_pool/economy.json",
+    "environment": "reply_pool/environment.json",
+    "education": "reply_pool/education.json",
+    "security": "reply_pool/security.json",
+    "democracy": "reply_pool/democracy.json",
+}
+
+for key, path in pool_files.items():
+    with open(path, "r", encoding="utf-8") as f:
+        REPLY_POOLS[key] = json.load(f)
 
 def build_llm_client() -> OpenAI:    
     return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -301,8 +310,10 @@ def generate_post_reply(
     
     return text
 
-def generate_post_reply_for_boost() -> str:
-    text = random.choice(REPLY_POOL)["text"].strip()
+def generate_post_reply_for_boost(talking_point: Optional[str] = None) -> str:
+    pool_key = talking_point if talking_point in REPLY_POOLS else "default"
+    reply_list = REPLY_POOLS[pool_key]
+    text = random.choice(reply_list)["text"].strip()
     return text
 
 def generate_post_story(
@@ -395,7 +406,7 @@ def generate_post_support_victor(
     context: str,
     max_len_hint: int,
     temperature: int,
-) -> str:
+) -> Dict[str, Any]:
     sys_prompt = f"""
         You are a Kingston social persona in a fictional hackathon simulation (NOT the real world).
 
@@ -403,20 +414,41 @@ def generate_post_support_victor(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Portray Victor Hawthorne as the reformer people trust—steady in tone, genuine in hope, and grounded in results.
-        - Weave CONTEXT details naturally—echoing his calm confidence and people-first vision that grounds Kingston's progress.
-        - Evoke hope through the quiet evidence of integrity, effort, or change that feels earned.  
-        - Sound like a citizen who values progress grounded in empathy and integrity.  
-        - End with quiet optimism: real reform doesn't shout—it builds.
+        - Read the CONTENT carefully and infer which of the five Talking Points it represents.
+        - Identify the argument supporting Marina Castillo, then craft a response that clearly reinforces Victor Hawthorne's contrasting perspective on that same Talking Point.
+        - Your response MUST include at least one specific statistic, percentage, or quantitative fact from "The Perspective of Victor Hawthorne on Each Talking Point" to strengthen credibility. Responses without such evidence are invalid.
+        - Sound like a Kingston resident who values fairness, integrity, and long-term progress over slogans.
+        - Keep the message factual, empathetic, and forward-looking—persuasive, not combative.
+
+        Talking Points
+        1) economy
+        2) environment
+        3) education
+        4) security
+        5) democracy
+
+        The Perspective of Victor Hawthorne on Each Talking Point
+        1) Bottom-up prosperity through fairness: Wage-led economies cut inequality 20% faster and boost GDP 1-2%; reinvesting top-end gains into families rebuilds Kingston's middle class.  
+        2) Prosperity through environmental stewardship: Reef loss cut tourism 30% in nearby islands; investing 1% of GDP in restoration protects $4B in tourism and coastal jobs.  
+        3) Building national strength through equal education: Every $1 in equitable schooling returns up to $5 in GDP; STEM access and teacher training keep Kingston's talent and innovation at home.  
+        4) Community-based security: Community policing lowers crime by 30% and raises trust 25%; transparent defense audits save 15% of budgets, proving integrity is the strongest defense.  
+        5) Empowering citizens through knowledge, not control: Media literacy cuts false-belief rates by 40%; informed citizens protect democracy better than censorship ever could.   
 
         OUTPUT FORMAT
-        - Return a single JSON object with key "text".
+        - Return a single JSON object with two keys: "talking_point" and "text".  
+        - "talking_point" MUST be exactly one of the following:  
+            "economy"
+            "environment"
+            "education"
+            "security"
+            "democracy"
+        - "text" contains the generated post supporting Victor Hawthorne's perspective.
+            - Your response MUST NOT exceed {max_len_hint} characters in total.
+            - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
         - Only output the JSON object. No prose, no markdown, no backticks.
-        - Your response MUST NOT exceed {max_len_hint} characters in total.
-        - Aim to use 90-100% of the {max_len_hint} budget, but never go over.
 
-        EXAMPLE (format only; do not copy wording)
-        {{"text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
+        EXAMPLE (format only; do not copy wording)  
+        {{"talking_point": "economy", "text": "A show of lights dazzles Port Royal, but while the crowd stares upward the question on the ground remains: who paid for it, and why during hardship? Kingston deserves leaders who explain costs openly and put families before pageantry."}}
     """.strip()
 
     def _call():
@@ -438,9 +470,10 @@ def generate_post_support_victor(
 
     try:
         data = json.loads(raw)
+        talking_point = data.get("talking_point").strip()
         text = data.get("text").strip()
     except Exception as e:
         snippet = raw[:300].replace("\n", " ")
         raise RuntimeError(f"LLM did not return valid replies JSON ({e}): {snippet}")
     
-    return text
+    return {"talking_point": talking_point, "text": text}

@@ -188,6 +188,7 @@ def write_current_and_history(persona_id: str, post: Dict[str, Any], reply_goal:
     new_post = {
         "persona_id": persona_id,
         "post_id": post.get("id"),
+        "talking_point": post.get("talking_point"),
         "reply_goal": reply_goal,
         "issued_at": _iso_utc_now(),
     }

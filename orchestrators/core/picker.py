@@ -1,3 +1,4 @@
+import random
 import twooter.sdk as twooter
 from typing import Any, Dict, List
 from .auth import relogin_for
@@ -21,6 +22,28 @@ def pick_post_by_id(
     item = (post_get or {}).get("data") or {}
     
     target_post = extract_post_fields(item)
+    return target_post
+
+def pick_post_from_feed(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    feed_key: str,
+) -> Dict[str, Any]:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
+    feed = with_backoff(
+        lambda: t.feed(feed_key, top_n=20),
+        on_error_note="feed",
+        relogin_fn=relogin_fn
+    )
+    items = (feed or {}).get("data") or []
+
+    exclude_authors = ["olivia_smith21", "william.j89", "ava.miller07", "james_wilson34", "mia.thomas99"]
+    posts = [extract_post_fields(d) for d in items]
+    candidates = [p for p in posts if p.get("author_username") not in exclude_authors]
+    target_post = random.choice(candidates) if candidates else {}
     return target_post
 
 def pick_post_from_feed_by_user(
