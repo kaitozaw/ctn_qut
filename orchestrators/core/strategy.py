@@ -323,7 +323,7 @@ def _generate_post(
             CONTENT:
             {content}
         """
-        max_reply_len = 200
+        max_reply_len = 240
         temperature = 0.7
         try:
             generated = generate_post_support_victor(llm_client, context, max_reply_len, temperature)
