@@ -10,7 +10,7 @@ from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story, generate_post_support_victor
 from .picker import pick_post_by_id, pick_post_from_feed, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
-from .picker_s3 import get_dialogue, get_random_article, get_random_post_id, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
+from .picker_s3 import get_dialogue, get_random_article, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
