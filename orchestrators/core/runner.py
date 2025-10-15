@@ -2,8 +2,7 @@ import twooter.sdk as twooter
 from openai import OpenAI
 from queue import Queue
 from typing import Any, Dict, List, Set
-from .strategy import attract, boost
-import threading
+from .strategy import attract, boost, engage
 
 def run_once(
     cfg: Dict[str, Any],
@@ -15,10 +14,12 @@ def run_once(
     send_queue: Queue,
 ) -> str:
     if strategy == "attract":
-        result = attract(cfg, t, llm_client, ng_words, replied_posts)
+        result = attract(cfg, t, llm_client, ng_words)
         return result
     elif strategy == "boost":
         result = boost(cfg, t, replied_posts, send_queue)
         return result
+    elif strategy == "engage":
+        result = engage(cfg, t, llm_client, ng_words, replied_posts,)
     else:
         return "NO_STRATEGY"

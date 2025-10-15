@@ -13,6 +13,7 @@ pool_files = {
     "education": "reply_pool/education.json",
     "security": "reply_pool/security.json",
     "democracy": "reply_pool/democracy.json",
+    "attack_marina": "reply_pool/attack_marina.json"
 }
 
 for key, path in pool_files.items():
@@ -35,21 +36,10 @@ def generate_post_article(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Subtly highlight why Victor Hawthorne's approach benefits ordinary Kingstonians.
-        - Base your reasoning on the ARTICLE CONTENT.
-        - When reasoning, draw from the contrasts in CONFLICT STRUCTURES below.
-        - Keep the style punchy, civil, and relatable.
-
-        CONFLICT STRUCTURES:
-        1) Economy vs Fairness
-        - Castillo: tax cuts + tourism-led growth, business-centred efficiency
-        - Hawthorne: investment in education/healthcare, people-centred equity
-        2) Short-term boom vs Long-term sustainability
-        - Castillo: quick growth + immediate investment, short-term prosperity
-        - Hawthorne: strong foundations in environment/education/healthcare, future-oriented stability
-        3) Top-down vs Bottom-up
-        - Castillo: centralised, large gov-business projects, command-led governance
-        - Hawthorne: community-led initiatives, local voice reflected, grassroots empowerment
+        - Base your reasoning on the ARTICLE CONTENT, drawing evidence directly from its themes or facts.  
+        - Contrast Victor Hawthorne's steady, people-first reform with the noise and short-termism around him.  
+        - Speak like a Kingston local who's tired of empty talk and ready for results.  
+        - End with a clear nudge — that real progress starts by voting for Victor.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".
@@ -268,11 +258,10 @@ def generate_post_reply(
         - Persuade UNDECIDED voters to see Victor Hawthorne more favourably.
 
         ROLE
-        - Portray Victor Hawthorne as the reformer people trust—steady in tone, genuine in hope, and grounded in results.
-        - Refer to the DIALOGUE carefully, acknowledging what was said and tying your reply to the ongoing exchange.
-        - Evoke hope through the quiet evidence of integrity, effort, or change that feels earned.  
-        - Sound like a citizen who values progress grounded in empathy and integrity.  
-        - End with quiet optimism: real reform doesn't shout—it builds.
+       	- Refer to the DIALOGUE carefully and respond directly to what was asked or challenged.
+        - Strengthen your point with one believable fact, figure, or outcome that fits the flow of conversation.
+        - Avoid sounding argumentative; speak with calm conviction and clarity.
+        - End by connecting the fact to Kingston's shared well-being or progress.
 
         OUTPUT FORMAT
         - Return a single JSON object with key "text".

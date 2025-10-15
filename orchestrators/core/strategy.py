@@ -1,7 +1,6 @@
 import json
 import os
 import random
-import time
 import twooter.sdk as twooter
 from openai import OpenAI
 from queue import Full, Queue
@@ -10,7 +9,7 @@ from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story, generate_post_support_victor
 from .picker import pick_post_by_id, pick_post_from_feed, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
-from .picker_s3 import get_dialogue, get_random_article, get_story_histories, read_current, write_current_and_history, write_dialogues, write_story_histories, write_trending_posts
+from .picker_s3 import get_dialogue, get_random_article, get_story_histories, read_current, write_current_and_history, write_dialogue, write_story_history, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -109,7 +108,7 @@ def _generate_post(
 
             You are replying as: {persona_id}
         """
-        max_reply_len = 200
+        max_reply_len = 240
         temperature = 0.7
         try:
             text = generate_post_reply(llm_client, context, max_reply_len, temperature)
@@ -128,7 +127,7 @@ def _generate_post(
             ARTICLE_CONTENT:
             {article_content}
         """
-        max_reply_len = 200
+        max_reply_len = 240
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)
@@ -164,7 +163,7 @@ def _generate_post(
             STORY_SEED:
             {story_seed}
         """
-        max_reply_len = 200
+        max_reply_len = 230
         temperature = 0.7
         try:
             text = generate_post_attack_kingstondaily(llm_client, context, max_reply_len, temperature)
@@ -192,7 +191,7 @@ def _generate_post(
             STORY_SEED:
             {story_seed}
         """
-        max_reply_len = 200
+        max_reply_len = 230
         temperature = 0.7
         try:
             text = generate_post_attack_marina(llm_client, context, max_reply_len, temperature)
@@ -249,7 +248,7 @@ def _generate_post(
             REASONING:
             {story_seed["reasoning"]}
         """
-        max_reply_len = 220
+        max_reply_len = 230
         temperature = 0.7
         try:
             text = generate_post_call_for_action(llm_client, context, max_reply_len, temperature)
@@ -284,11 +283,11 @@ def _generate_post(
             STORY_PHASE: 
             {story_phase}
         """
-        max_reply_len = 200
+        max_reply_len = 240
         temperature = temp_by_phase.get(story_phase, 0.7)
         try:
             text = generate_post_story(llm_client, context, max_reply_len, temperature)
-            write_story_histories(persona_id, story_phase, text)
+            write_story_history(persona_id, story_phase, text)
             hashtag = " #TideTurning"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
@@ -377,41 +376,24 @@ def attract(
     t: twooter.Twooter,
     llm_client: OpenAI,
     ng_words: List[str],
-    replied_posts: Set[int],
 ) -> str:
     persona_id = (cfg.get("persona_id") or "").strip()
     cur = read_current()
-    current_persona_id = (cur or {}).get("persona_id", "")
     current_post_id = (cur or {}).get("post_id", 0)
     current_reply_goal = (cur or {}).get("reply_goal", 0)
-    if not isinstance(current_persona_id, str) or not isinstance(current_post_id, int) or not isinstance(current_reply_goal, int):
+    if not isinstance(current_post_id, int) or not isinstance(current_reply_goal, int):
         return "INVALID_CURRENT_JSON"
-    
     post = pick_post_by_id(cfg, t, current_post_id) if current_post_id else {}
     reply_count = post.get("reply_count", 0)
     
     trending_posts = pick_posts_from_feed(cfg, t, "trending") or []
     write_trending_posts(trending_posts)
 
-    if persona_id != current_persona_id:
-        notification_posts = pick_posts_from_notification(cfg, t)
-        notification_posts_from_npc = _filter_posts_by_npc(notification_posts)
-        for notification_post in notification_posts_from_npc:
-            if notification_post["id"] not in replied_posts:
-                write_dialogues(persona_id, notification_post)
-                reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
-                if reply:
-                    write_dialogues(persona_id, reply)
-                    replied_posts.add(notification_post["id"])
-            time.sleep(5)
-
     if not cur or not post or reply_count >= current_reply_goal:
         target_post = _generate_and_send_post(cfg, t, llm_client, ng_words)
-        write_dialogues(persona_id, target_post)
-
+        write_dialogue(persona_id, target_post)
         if not target_post:
             return "NO_TARGET_POST"
-        
         new_goal = _choose_goal()
         write_current_and_history(persona_id, target_post, new_goal)
         return "SET NEW POST"
@@ -427,7 +409,6 @@ def boost(
     persona_id = (cfg.get("persona_id") or "").strip()
     index = cfg.get("index", -1)
     relogin_fn = relogin_for(t, persona_id, index)
-
     cur = read_current()
     if not cur:
         return "NO_CURRENT_JSON"
@@ -439,7 +420,6 @@ def boost(
     if current_post_id not in replied_posts:
         def _like(): return t.post_like(post_id=current_post_id)
         def _repost(): return t.post_repost(post_id=current_post_id)
-
         try:
             with_backoff(_like, on_error_note="like", relogin_fn=relogin_fn)
         except Exception as e:
@@ -448,7 +428,6 @@ def boost(
             with_backoff(_repost, on_error_note="repost", relogin_fn=relogin_fn)
         except Exception as e:
             pass
-
         replied_posts.add(current_post_id)
     
     text = generate_post_reply_for_boost(current_talking_point)
@@ -460,4 +439,25 @@ def boost(
     enq = _enqueue_job(send_queue, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=current_post_id, text=text)
     if not enq:
         return "SKIPPED"
+    
     return "ENQUEUED"
+
+def engage(
+    cfg: Dict[str, Any],
+    t: twooter.Twooter,
+    llm_client: OpenAI,
+    ng_words: List[str],
+    replied_posts: Set[int],
+) -> str:
+    persona_id = (cfg.get("persona_id") or "").strip()
+    notification_posts = pick_posts_from_notification(cfg, t)
+    notification_posts_from_npc = _filter_posts_by_npc(notification_posts)
+    for notification_post in notification_posts_from_npc:
+        if notification_post["id"] not in replied_posts:
+            write_dialogue(persona_id, notification_post)
+            reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
+            if reply:
+                write_dialogue(persona_id, reply)
+                replied_posts.add(notification_post["id"])
+                return "SENT"
+    return "SKIPPED"

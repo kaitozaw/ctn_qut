@@ -200,7 +200,7 @@ def write_current_and_history(persona_id: str, post: Dict[str, Any], reply_goal:
 
     print(f"[s3] wrote current and histories -> s3://{bucket}/{current_key} (history={hist_key})")
 
-def write_dialogues(persona_id: str, post: Dict[str, Any]):
+def write_dialogue(persona_id: str, post: Dict[str, Any]):
     s3, bucket, _, _, dialogues_key, _, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
@@ -237,7 +237,7 @@ def write_dialogues(persona_id: str, post: Dict[str, Any]):
 
     print(f"[s3] wrote dialogues -> s3://{bucket}/{dialogues_key}")
 
-def write_story_histories(persona_id: str, story_phase: str, text: str):
+def write_story_history(persona_id: str, story_phase: str, text: str):
     s3, bucket, _, _, _, _, story_histories_key, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
