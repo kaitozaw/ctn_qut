@@ -155,7 +155,7 @@ def main():
             print(f"[error] persona={persona_id} {e.__class__.__name__}: {e}")
 
         # --- sleep ---
-        if strategy == "boost" or strategy == "engage":
+        if strategy == "boost":
             time.sleep(busy_sleep)
         else:
             base = 120

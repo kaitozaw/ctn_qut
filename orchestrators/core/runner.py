@@ -20,6 +20,7 @@ def run_once(
         result = boost(cfg, t, replied_posts, send_queue)
         return result
     elif strategy == "engage":
-        result = engage(cfg, t, llm_client, ng_words, replied_posts,)
+        result = engage(cfg, t, llm_client, ng_words, replied_posts)
+        return result
     else:
         return "NO_STRATEGY"
