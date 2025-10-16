@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Set
 from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story, generate_post_support_victor
-from .picker import pick_post_by_id, pick_post_from_feed, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification
+from .picker import pick_post_by_id, pick_post_from_feed, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification, pick_posts_from_user
 from .picker_s3 import get_dialogue, get_random_article, get_story_histories, read_current, write_current_and_history, write_dialogue, write_story_history, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
@@ -127,7 +127,7 @@ def _generate_post(
             ARTICLE_CONTENT:
             {article_content}
         """
-        max_reply_len = 200
+        max_reply_len = 220
         temperature = 0.7
         try:
             text = generate_post_article(llm_client, context, max_reply_len, temperature)
@@ -297,42 +297,40 @@ def _generate_post(
             return None
     
     elif content_type == "support_victor":
-        post = pick_post_from_feed(cfg, t, "trending")
-        parent_id = (post or {}).get("id")
-        content = (post or {}).get("content")
+        talking_points = [
+            "economy",
+            "environment",
+            "education",
+            "security",
+            "democracy",
+            "healthcare",
+            "housing",
+            "disaster",
+            "infrastructure",
+            "innovation"
+        ]
+        talking_point = random.choice(talking_points)
         media_urls = [
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm43bG5xemE1eHpjZnc4bWw2anU0eXZmbWhvcWRrMTVuZTJ1aWg3eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Onjpi7pY5zsP3s0lZR/giphy.gif"],
-            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWk1aXhzbmZoajlmNThsM3ozdDhnMDlvbGdjYWRmdHBlajVkem5zdSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GwsmSPWlXjAAkwafUo/giphy.gif"],
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExaXNld2dpZWZrNjFuajQ5ZWdxbXlqcHI3cGlrdDVoc293cDB5a3lpaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/EKf5C8v3q47opyA5wC/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDkxcmZyd3Jkd293NnJiOWRwM2ZrZHM0MXQ4cTF6YWExNGx0Z3F1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/q5jzVLczqfMQsySiZL/giphy.gif"],
-            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXo5b3hxbnluYnM0OTJtN2kxbWhseXR4Zmt2bWoxMXRjY29mM2owdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nCesEgmFanhiFeOwd3/giphy.gif"],
-            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNTg0MnJwZTk1cDlpNnplc2lpbW1vaXM2ejBpNHY3aXNnN3dvNHJoYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5zCdKn7WIaQdMM8F3a/giphy.gif"],
-            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDh3OWxhdmY0bWY0ajZpdWI1ZnEzdWhubHhuYW5meDY5YTF3bnV4aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/DzOX9dd0YjRNasRV8e/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3A0a2l1NG5ubW8yZ3Z6ODhxeWxqeGlzZWRyYW1lNGlheTU2YWgzYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l8mqthYotz9RUfvsyL/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW9sdWNtOXpuejU2Ym5xc3M5dnFldml3MGlqZWk1bm9kdjRrMHJoayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hieNUxNnnrZv5pHo5D/giphy.gif"],
-            ["https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGxrZWdvZzQ4b3Bza3c3OHd4YmI0bTltaWFhOGs5enUzZmczdGl5ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFgtN1a5Bmi9kPqC6D/giphy.gif"],
-            ["https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTVpc3BkaTZhY3Vtb28zc3AyMG5majF0eWVpa3pwY2V6ZHMwdHlwNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jn3tQ9H8Ybu1bypduU/giphy.gif"],
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjZwYzZlN2NteXUyejlsMzlhMXF1N2kwNDFmYnd1ZWxmYXF0aXY3YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZvHJY3xI0xKqHLNj6r/giphy.gif"],
-            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYWNtOHpqa2RudDZ1bTRpYmE3aXM1MW41NWpwbTRzOWx1MHcxdHg0dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ddwgF7837BFKFnrrgo/giphy.gif"],
-            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWl2eGdyOHo2MnJhd3pxeXVwYnExemE3emRxZm8wZmowczVmMGpiMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZBIB9apOVUl8jwNZRP/giphy.gif"],
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ3I3am5qbXlsbzh2Nm51NGE1M3o1OTB3cWZwaXNmZnZqanJqOWdwNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/CkwbQ4tByE3oXJyT2O/giphy.gif"]
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWZ0cjk1bWp1cjd6Z2g0aGtqOWdxcHp2Y241NzNydm9rY290eHRzNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BarVCkPXdwR93Cz3im/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGdwdWVxamdrNGR1MTZ3a2o3ZmxveTBlMDJhc2VsZHg5ZnhybWU5MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rtIT5jkomqCRPhEkBn/giphy.gif"],
+            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTA0d2NyanFmMnN5NnF4NGlsYW0wOXBqOTUxdjcwcGtnajZjZjRibSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WvOPQkhaUijdc1PUVq/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGx0YmppYzAzaTAwdGlvcXFoYzQ0eXhyZGRjdml6dGxmMzhtNjV3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jUhaUow87oy0aRz9n9/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXB4eHVtMTh4aHkwdzZvaHJwdmljeDV3bDVjOHNla2puNGMyamY4NSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/7GGovq8VEXONqAjBF8/giphy.gif"]
         ]
         media_url = random.choice(media_urls)
 
         context = f"""
-            CONTENT:
-            {content}
+            TALKING_POINT:
+            {talking_point}
         """
-        max_reply_len = 240
+        max_reply_len = 220
         temperature = 0.7
         try:
-            generated = generate_post_support_victor(llm_client, context, max_reply_len, temperature)
-            text = generated.get("text")
-            talking_point = generated.get("talking_point")
-            hashtag = " #VoteVictor"
+            text = generate_post_support_victor(llm_client, context, max_reply_len, temperature)
+            hashtag = " #VoteVictor #KingstonElection"
             if len(text) + len(hashtag) <= 255:
                 text = text + hashtag
-            return {"text": text, "parent_id": parent_id or None, "media_url": media_url or None, "talking_point": talking_point or None}
+            return {"text": text, "media_url": media_url or None, "talking_point": talking_point or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
