@@ -157,6 +157,12 @@ def main():
         # --- sleep ---
         if strategy == "boost":
             time.sleep(busy_sleep)
+        elif strategy == "engage":
+            base = 10
+            jitter = 5
+            sleep = base + random.randint(-jitter, jitter)
+            print(f"[loop] persona={persona_id} status={status} sleep={sleep}s")
+            time.sleep(sleep)
         else:
             base = 120
             jitter = 60
