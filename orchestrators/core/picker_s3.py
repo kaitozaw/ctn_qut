@@ -14,15 +14,16 @@ def _get_s3_and_cfg() -> Tuple[any, str, str, str]:
     story_histories_key = os.getenv("PICKER_STORY_HISTORIES_KEY", "picker/contexts/story_histories.json")
     current_key = os.getenv("PICKER_CURRENT_KEY", "picker/current.json")
     history_prefix = os.getenv("PICKER_HISTORY_PREFIX", "picker/history/")
+    npcs_key = os.getenv("PICKER_NPC_KEY", "picker/npcs.json")
     
     s3 = boto3.client("s3", region_name=region, config=Config(retries={"max_attempts": 5, "mode": "standard"}))
-    return s3, bucket, trending_posts_prefix, articles_key, dialogues_key, posts_key, story_histories_key, current_key, history_prefix
+    return s3, bucket, trending_posts_prefix, articles_key, dialogues_key, posts_key, story_histories_key, current_key, history_prefix, npcs_key
 
 def _iso_utc_now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 def _read_articles_array() -> Optional[List[Dict[str, str]]]:
-    s3, bucket, _, articles_key, _, _, _, _, _ = _get_s3_and_cfg()
+    s3, bucket, _, articles_key, _, _, _, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=articles_key)
@@ -44,7 +45,7 @@ def _read_articles_array() -> Optional[List[Dict[str, str]]]:
     return articles
 
 def _read_dialogues_dict() -> Dict[str, List[List[Dict[str, Any]]]]:
-    s3, bucket, _, _, dialogues_key, _, _, _, _ = _get_s3_and_cfg()
+    s3, bucket, _, _, dialogues_key, _, _, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=dialogues_key)
@@ -83,8 +84,32 @@ def _read_dialogues_dict() -> Dict[str, List[List[Dict[str, Any]]]]:
         dialogues[persona_id] = norm_threads
     return dialogues
 
+def _read_npcs_array() -> Optional[List[str]]:
+    s3, bucket, _, _, _, _, _, _, _, npcs_key = _get_s3_and_cfg()
+    assert bucket, "AWS_S3_BUCKET is required"
+    try:
+        obj = s3.get_object(Bucket=bucket, Key=npcs_key)
+        data = json.loads(obj["Body"].read().decode("utf-8"))
+    except s3.exceptions.NoSuchKey:
+        return None
+    except Exception as e:
+        print(f"[s3] read_npcs error: {e.__class__.__name__}: {e}")
+        return None
+
+    if not isinstance(data, list):
+        print(f"[json] expected top-level array at s3://{bucket}/{npcs_key}")
+        return None
+
+    usernames = []
+    for d in data:
+        if isinstance(d, str):
+            username = d.strip()
+            if username:
+                usernames.append(username)
+    return usernames
+
 def _read_posts_array() -> Optional[List[int]]:
-    s3, bucket, _, _, _, posts_key, _, _, _ = _get_s3_and_cfg()
+    s3, bucket, _, _, _, posts_key, _, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=posts_key)
@@ -106,7 +131,7 @@ def _read_posts_array() -> Optional[List[int]]:
     return posts
 
 def _read_story_histories_dict() -> Dict[str, Dict[str, List[str]]]:
-    s3, bucket, _, _, _, _, story_histories_key, _, _  = _get_s3_and_cfg()
+    s3, bucket, _, _, _, _, story_histories_key, _, _, _  = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=story_histories_key)
@@ -153,7 +178,15 @@ def get_random_article() -> Optional[Dict[str, Any]]:
         return None
     index = random.randrange(len(articles))
     article = articles[index]
-    return {"embed_url": article["embed_url"], "article_content": article["article_content"]}
+    return article
+
+def get_random_npc() -> Optional[str]:
+    npcs = _read_npcs_array()
+    if not npcs:
+        return None
+    index = random.randrange(len(npcs))
+    npc = npcs[index]
+    return npc
 
 def get_random_post_id() -> Optional[int]:
     posts = _read_posts_array()
@@ -170,7 +203,7 @@ def get_story_histories(persona_id: str) -> Dict[str, List[str]]:
     return story_histories.get(persona_id, {})
 
 def read_current() -> Optional[Dict[str, Any]]:
-    s3, bucket, _, _, _, _, _, current_key, _ = _get_s3_and_cfg()
+    s3, bucket, _, _, _, _, _, current_key, _, _= _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
     try:
         obj = s3.get_object(Bucket=bucket, Key=current_key)
@@ -182,7 +215,7 @@ def read_current() -> Optional[Dict[str, Any]]:
         return None
 
 def write_current_and_history(persona_id: str, post: Dict[str, Any], reply_goal: int):
-    s3, bucket, _, _, _, _, _, current_key, history_prefix = _get_s3_and_cfg()
+    s3, bucket, _, _, _, _, _, current_key, history_prefix, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
     new_post = {
@@ -198,10 +231,10 @@ def write_current_and_history(persona_id: str, post: Dict[str, Any], reply_goal:
     s3.put_object(Bucket=bucket, Key=hist_key, Body=body, ContentType="application/json", CacheControl="no-cache")
     s3.put_object(Bucket=bucket, Key=current_key, Body=body, ContentType="application/json", CacheControl="no-cache")
 
-    print(f"[s3] wrote current and histories -> s3://{bucket}/{current_key} (history={hist_key})")
+    print(f"[s3] wrote current and history -> s3://{bucket}/{current_key} (history={hist_key})")
 
 def write_dialogue(persona_id: str, post: Dict[str, Any]):
-    s3, bucket, _, _, dialogues_key, _, _, _, _ = _get_s3_and_cfg()
+    s3, bucket, _, _, dialogues_key, _, _, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
     new_post = {
@@ -235,10 +268,29 @@ def write_dialogue(persona_id: str, post: Dict[str, Any]):
     body = json.dumps(dialogues, ensure_ascii=False).encode("utf-8")
     s3.put_object(Bucket=bucket, Key=dialogues_key, Body=body, ContentType="application/json", CacheControl="no-cache")
 
-    print(f"[s3] wrote dialogues -> s3://{bucket}/{dialogues_key}")
+    print(f"[s3] wrote dialogue -> s3://{bucket}/{dialogues_key}")
+
+def write_npc(username: str):
+    s3, bucket, _, _, _, _, _, _, _, npcs_key = _get_s3_and_cfg()
+    assert bucket, "AWS_S3_BUCKET is required"
+
+    data = _read_npcs_array()
+    if not isinstance(data, list):
+        data = []
+    u = (username or "").strip()
+    if not u:
+        return
+    if u in data:
+        return
+    data.append(u)
+
+    body = json.dumps(data, ensure_ascii=False, indent=None).encode("utf-8")
+    s3.put_object(Bucket=bucket, Key=npcs_key, Body=body, ContentType="application/json", CacheControl="no-cache")
+    
+    print(f"[s3] wrote npc -> s3://{bucket}/{npcs_key}")
 
 def write_story_history(persona_id: str, story_phase: str, text: str):
-    s3, bucket, _, _, _, _, story_histories_key, _, _ = _get_s3_and_cfg()
+    s3, bucket, _, _, _, _, story_histories_key, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
     data = _read_story_histories_dict()
@@ -253,10 +305,10 @@ def write_story_history(persona_id: str, story_phase: str, text: str):
     body = json.dumps(data, ensure_ascii=False).encode("utf-8")
     s3.put_object(Bucket=bucket, Key=story_histories_key, Body=body, ContentType="application/json", CacheControl="no-cache")
 
-    print(f"[s3] wrote story_histories -> s3://{bucket}/{story_histories_key}")
+    print(f"[s3] wrote story_history -> s3://{bucket}/{story_histories_key}")
 
 def write_trending_posts(trending_posts: List[Dict[str, Any]]):
-    s3, bucket, trending_posts_prefix, _, _, _, _, _, _ = _get_s3_and_cfg()
+    s3, bucket, trending_posts_prefix, _, _, _, _, _, _, _ = _get_s3_and_cfg()
     assert bucket, "AWS_S3_BUCKET is required"
 
     now_utc = datetime.now(timezone.utc)

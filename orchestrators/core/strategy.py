@@ -9,7 +9,7 @@ from .auth import relogin_for
 from .backoff import with_backoff
 from .generator import generate_post_article, generate_post_attack_kingstondaily, generate_post_attack_marina, generate_post_call_for_action, generate_post_reply, generate_post_reply_for_boost, generate_post_story, generate_post_support_victor
 from .picker import pick_post_by_id, pick_post_from_feed, pick_post_from_feed_by_user, pick_posts_from_feed, pick_posts_from_notification, pick_posts_from_user
-from .picker_s3 import get_dialogue, get_random_article, get_story_histories, read_current, write_current_and_history, write_dialogue, write_story_history, write_trending_posts
+from .picker_s3 import get_dialogue, get_random_article, get_random_npc, get_story_histories, read_current, write_current_and_history, write_dialogue, write_npc, write_story_history, write_trending_posts
 from .text_filter import safety_check
 from .transform import extract_post_fields
 
@@ -101,6 +101,14 @@ def _generate_post(
             content = d.get("content", "").strip()
             dialogue_lines.append(f"{author}: {content}")
         dialogue_text = "\n".join(dialogue_lines)
+        media_urls = [
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYXVod2JobHM3eTB5ZWl3NXR3dnF1bnc1NG1pcHRpdW9uZGg3Z2lkNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Xg5p5RO9zWRGU7dINl/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDQ5YnBlZmd1eG5yeGk3aHB1YmE1ZnB4YTRzanMwODhvanBxNmgwbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uREGaBUVSmtmO4Q3uy/giphy.gif"],
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHdzd2k3cDB0cmFvYTVvbXkydnk4eHlvazAzbzl6bGEyeHV4amF3YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UCDuCvRw9sdYuiWv7f/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaW80b3hhN2N5Y3Vkb21heDF2M2d6Nm95Zms1MnVnMHlzZnM3Zmk4ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/DzOX9dd0YjRNasRV8e/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnR5dTk2cGN5Yjlpb2J0bDRmcnk4dnZ5djE0N3Z2MDYzbG96MjBqaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jUhaUow87oy0aRz9n9/giphy.gif"]
+        ]
+        media_url = random.choice(media_urls)
 
         context = f"""
             DIALOGUE:
@@ -112,7 +120,7 @@ def _generate_post(
         temperature = 0.7
         try:
             text = generate_post_reply(llm_client, context, max_reply_len, temperature)
-            return {"text": text, "parent_id": parent_id or None}
+            return {"text": text, "parent_id": parent_id or None, "media_url": media_url or None}
         except Exception as e:
             print(f"[llm] generate_post error: {e}")
             return None
@@ -311,11 +319,11 @@ def _generate_post(
         ]
         talking_point = random.choice(talking_points)
         media_urls = [
-            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWZ0cjk1bWp1cjd6Z2g0aGtqOWdxcHp2Y241NzNydm9rY290eHRzNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BarVCkPXdwR93Cz3im/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGdwdWVxamdrNGR1MTZ3a2o3ZmxveTBlMDJhc2VsZHg5ZnhybWU5MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rtIT5jkomqCRPhEkBn/giphy.gif"],
-            ["https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTA0d2NyanFmMnN5NnF4NGlsYW0wOXBqOTUxdjcwcGtnajZjZjRibSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WvOPQkhaUijdc1PUVq/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGx0YmppYzAzaTAwdGlvcXFoYzQ0eXhyZGRjdml6dGxmMzhtNjV3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jUhaUow87oy0aRz9n9/giphy.gif"],
-            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXB4eHVtMTh4aHkwdzZvaHJwdmljeDV3bDVjOHNla2puNGMyamY4NSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/7GGovq8VEXONqAjBF8/giphy.gif"]
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYXVod2JobHM3eTB5ZWl3NXR3dnF1bnc1NG1pcHRpdW9uZGg3Z2lkNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Xg5p5RO9zWRGU7dINl/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDQ5YnBlZmd1eG5yeGk3aHB1YmE1ZnB4YTRzanMwODhvanBxNmgwbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uREGaBUVSmtmO4Q3uy/giphy.gif"],
+            ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHdzd2k3cDB0cmFvYTVvbXkydnk4eHlvazAzbzl6bGEyeHV4amF3YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UCDuCvRw9sdYuiWv7f/giphy.gif"],
+            ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaW80b3hhN2N5Y3Vkb21heDF2M2d6Nm95Zms1MnVnMHlzZnM3Zmk4ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/DzOX9dd0YjRNasRV8e/giphy.gif"],
+            ["https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnR5dTk2cGN5Yjlpb2J0bDRmcnk4dnZ5djE0N3Z2MDYzbG96MjBqaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jUhaUow87oy0aRz9n9/giphy.gif"]
         ]
         media_url = random.choice(media_urls)
 
@@ -452,10 +460,25 @@ def engage(
     notification_posts_from_npc = _filter_posts_by_npc(notification_posts)
     for notification_post in notification_posts_from_npc:
         if notification_post["id"] not in replied_posts:
+            write_npc(notification_post["author_username"])
             write_dialogue(persona_id, notification_post)
             reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
             if reply:
                 write_dialogue(persona_id, reply)
                 replied_posts.add(notification_post["id"])
                 return "SENT"
+    
+    npc_username = get_random_npc()
+    if npc_username:
+        posts = pick_posts_from_user(cfg, t, npc_username)
+        if posts:
+            target_post = posts[0]
+            if target_post["id"] not in replied_posts:
+                write_dialogue(persona_id, target_post)
+                reply = _generate_and_send_post(cfg, t, llm_client, ng_words, target_post)
+                if reply:
+                    write_dialogue(persona_id, reply)
+                    replied_posts.add(target_post["id"])
+                    return "SENT"
+
     return "SKIPPED"
