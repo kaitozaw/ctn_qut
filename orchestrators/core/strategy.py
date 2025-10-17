@@ -93,14 +93,17 @@ def _generate_post(
         persona_id = (cfg.get("persona_id") or "").strip()
         parent_id = post.get("id")
         dialogue = get_dialogue(persona_id, post) or []
-        dialogue_lines = []
-        for d in dialogue:
-            if not isinstance(d, dict):
-                continue
-            author = d.get("author_username", "unknown")
-            content = d.get("content", "").strip()
-            dialogue_lines.append(f"{author}: {content}")
-        dialogue_text = "\n".join(dialogue_lines)
+        if dialogue:
+            dialogue_lines = []
+            for d in dialogue:
+                if not isinstance(d, dict):
+                    continue
+                author = d.get("author_username", "unknown")
+                content = d.get("content", "").strip()
+                dialogue_lines.append(f"{author}: {content}")
+            dialogue_text = "\n".join(dialogue_lines)
+        else:
+            dialogue_text = post.get("content")
         media_urls = [
             ["https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYXVod2JobHM3eTB5ZWl3NXR3dnF1bnc1NG1pcHRpdW9uZGg3Z2lkNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Xg5p5RO9zWRGU7dINl/giphy.gif"],
             ["https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDQ5YnBlZmd1eG5yeGk3aHB1YmE1ZnB4YTRzanMwODhvanBxNmgwbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uREGaBUVSmtmO4Q3uy/giphy.gif"],
@@ -454,31 +457,41 @@ def engage(
     llm_client: OpenAI,
     ng_words: List[str],
     replied_posts: Set[int],
+    send_queue: Queue,
 ) -> str:
     persona_id = (cfg.get("persona_id") or "").strip()
+    index = cfg.get("index", -1)
+    relogin_fn = relogin_for(t, persona_id, index)
+
     notification_posts = pick_posts_from_notification(cfg, t)
     notification_posts_from_npc = _filter_posts_by_npc(notification_posts)
-    for notification_post in notification_posts_from_npc:
-        if notification_post["id"] not in replied_posts:
-            write_npc(notification_post["author_username"])
-            write_dialogue(persona_id, notification_post)
-            reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
-            if reply:
-                write_dialogue(persona_id, reply)
-                replied_posts.add(notification_post["id"])
-                return "SENT"
+    if notification_posts_from_npc:
+        for notification_post in notification_posts_from_npc:
+            if notification_post["id"] not in replied_posts:
+                write_npc(notification_post["author_username"])
+                write_dialogue(persona_id, notification_post)
+                reply = _generate_and_send_post(cfg, t, llm_client, ng_words, notification_post)
+                if reply:
+                    write_dialogue(persona_id, reply)
+                    replied_posts.add(notification_post["id"])
+                    return "SENT"
     
     npc_username = get_random_npc()
     if npc_username:
         posts = pick_posts_from_user(cfg, t, npc_username)
         if posts:
             target_post = posts[0]
-            if target_post["id"] not in replied_posts:
-                write_dialogue(persona_id, target_post)
-                reply = _generate_and_send_post(cfg, t, llm_client, ng_words, target_post)
-                if reply:
-                    write_dialogue(persona_id, reply)
-                    replied_posts.add(target_post["id"])
-                    return "SENT"
-
+            generated_post = _generate_post(cfg, t, llm_client, target_post)
+            text = generated_post.get("text")
+            ok, safe_text, reason = safety_check(text, ng_words)
+            if not ok:
+                print(f"[safety] blocked: reason={reason}")
+                return "SKIPPED"
+            parent_id = generated_post.get("parent_id")
+            media_url = generated_post.get("media_url")
+            def _send(): return t.post(safe_text, parent_id=parent_id or None, media=media_url or None)
+            enq = _enqueue_job(send_queue, fn=_send, relogin_fn=relogin_fn, note="post", persona_id=persona_id, reply_id=parent_id, text=text)
+            if not enq:
+                return "SKIPPED"
+            return "ENQUEUED"
     return "SKIPPED"
