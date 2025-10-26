@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 def _safe_int(x: Any) -> Optional[int]:
     try:
@@ -8,6 +8,8 @@ def _safe_int(x: Any) -> Optional[int]:
 
 def extract_post_fields(d: Dict[str, Any], *fields: str) -> Dict[str, Any]:
     author = d.get("author") or {}
+    tags = d.get("tags") or []
+    tag_names: List[str] = [t.get("name", "").strip() for t in tags if isinstance(t, dict)]
 
     all_fields = {
         "id": _safe_int(d.get("id")),
@@ -23,6 +25,7 @@ def extract_post_fields(d: Dict[str, Any], *fields: str) -> Dict[str, Any]:
         "parent_id": _safe_int(d.get("parent_id")),
         "embed": (d.get("embed") or "").strip() or None,
         "content": (d.get("content") or "").strip(),
+        "tags": tag_names,
     }
 
     if fields:
